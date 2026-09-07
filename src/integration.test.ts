@@ -145,6 +145,11 @@ function makeFixture(): void {
   db.prepare(
     "INSERT INTO users (id, display_name, password_hash, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', 'Usuari principal', NULL, datetime('now'), datetime('now'))"
   ).run();
+
+  // Font pròpia: 3Cat per a la pel·lícula original en català
+  db.prepare(
+    "INSERT INTO title_sources (title_id, provider, kind, url) VALUES ('tmdb-movie-1001', '3cat', 'free', 'https://www.3cat.cat/3cat/film-cata/')"
+  ).run();
   db.close();
 }
 
@@ -257,6 +262,23 @@ test('GET /api/titles/:id: títol lliure marcat com a reproduïble', async () =>
   assert.equal(r.status, 200);
   assert.equal(d.is_free, 1);
   assert.equal(d.playable, true);
+});
+
+test('Fonts pròpies: 3Cat apareix com a proveïdor gratuït amb URL directa', async () => {
+  const r = await fetch(`${base}/api/titles/tmdb-movie-1001`);
+  const d = await json(r);
+  assert.equal(r.status, 200);
+  const three = d.providers.find((p: { name: string }) => p.name === '3Cat');
+  assert.ok(three);
+  assert.equal(three.kind, 'free');
+  assert.equal(three.url, 'https://www.3cat.cat/3cat/film-cata/');
+  // amb font 3Cat → només queda l'enllaç de cerca de FilminCAT
+  assert.equal(d.search_links.length, 1);
+  assert.equal(d.search_links[0].name, 'FilminCAT');
+  const r2 = await fetch(`${base}/api/titles/tmdb-movie-1002`);
+  const d2 = await json(r2);
+  assert.equal(d2.search_links[0].name, '3Cat');
+  assert.equal(d2.search_links[1].name, 'FilminCAT');
 });
 
 test('GET /api/titles/:id: 404 per a inexistents', async () => {

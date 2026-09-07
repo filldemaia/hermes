@@ -7,6 +7,7 @@ import * as dbq from './db';
 import * as auth from './auth';
 import * as ff from './lib/ffmpeg';
 import { startCatalogSync, runCatalogSync, syncStatus } from './catalog/sync';
+import { sourceSyncStatus } from './catalog/sources';
 
 loadEnvFile(path.join(process.cwd(), '.env'));
 loadEnvFile(path.join(__dirname, '..', '.env'));
@@ -32,6 +33,57 @@ function activeUser(req: Request): string | null {
 }
 
 app.set('json spaces', 2);
+
+// ── Rate limiting bàsic (per IP, finestra fixa 60 s) ────────────────────────
+// El streaming de vídeo té límit més alt per no interferir la reproducció.
+
+const RATE_LIMIT = Number(env('RATE_LIMIT', '120')); // peticions/minut API normal
+const RATE_LIMIT_STREAM = Number(env('RATE_LIMIT_STREAM', '600')); // reproducció
+const isStreamPath = (p: string): boolean =>
+  p.startsWith('/api/stream/') ||
+  p.startsWith('/api/titles/') && /\/(stream|tracks|subtitles)/.test(p) ||
+  p.startsWith('/api/episodes/');
+
+const rateBuckets = new Map<string, { count: number; reset: number }>();
+
+function clientIp(req: Request): string {
+  return String(
+    req.header('CF-Connecting-IP') ||
+    req.header('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    req.socket.remoteAddress ||
+    ''
+  );
+}
+
+app.use('/api', (req, res, next) => {
+  const now = Date.now();
+  const ip = clientIp(req);
+  const limit = isStreamPath(req.path) ? RATE_LIMIT_STREAM : RATE_LIMIT;
+  let b = rateBuckets.get(ip);
+  if (!b || now >= b.reset) {
+    b = { count: 0, reset: now + 60_000 };
+    rateBuckets.set(ip, b);
+    if (rateBuckets.size > 10_000) {
+      for (const [k, v] of rateBuckets) if (now >= v.reset) rateBuckets.delete(k);
+    }
+  }
+  b.count++;
+  res.set('X-RateLimit-Limit', String(limit));
+  res.set('X-RateLimit-Remaining', String(Math.max(0, limit - b.count)));
+  if (b.count > limit) {
+    const retry = Math.ceil((b.reset - now) / 1000);
+    res.set('Retry-After', String(retry));
+    res.status(429).json({ error: 'Massa peticions. Torna-ho a provar en un minut.' });
+    return;
+  }
+  next();
+});
+
+// Neteja periòdica dels buckets caducats
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of rateBuckets) if (now >= v.reset) rateBuckets.delete(k);
+}, 120_000).unref();
 
 setupRemuxCleanup();
 
@@ -114,8 +166,16 @@ app.get('/api/titles', (req, res) => {
   const provider = String(req.query.provider || '').trim();
   const sort = String(req.query.sort || 'popularity').trim();
   const yearRaw = String(req.query.year || '').trim();
-  const animeRaw = String(req.query.anime ?? '').trim();
   const freeRaw = String(req.query.free ?? '').trim();
+  let animeRaw = String(req.query.anime ?? '').trim();
+  if (animeRaw === '') {
+    // Filtre per defecte segons la preferència de l'usuari (show_anime, per defecte actiu)
+    const userId = activeUser(req);
+    if (userId) {
+      const prefs = dbq.getPreferences(db, userId) as { show_anime?: boolean };
+      if (prefs.show_anime === false) animeRaw = '0';
+    }
+  }
   const data = dbq.listTitles(db, {
     q: q ? escLike(q) : undefined,
     type: type || undefined,
@@ -278,7 +338,7 @@ app.patch('/api/profiles/:id', (req, res) => {
 // ── Sincronització del catàleg ──────────────────────────────────────────────
 
 app.get('/api/sync/status', (req, res) => {
-  res.json(syncStatus(db));
+  res.json({ ...syncStatus(db), sources: sourceSyncStatus(db) });
 });
 
 app.post('/api/sync', asyncH(async (_req, res) => {

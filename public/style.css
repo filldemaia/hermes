@@ -243,6 +243,9 @@ body.on-home .nav-search { display: none; }
   font-size: 0.88rem;
 }
 .dropdown-item:hover { background: var(--surface-2); color: var(--amber-bright); }
+.dropdown-toggle { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.toggle-state { color: var(--muted); font-size: 0.76rem; }
+.dropdown-toggle:hover .toggle-state { color: var(--amber); }
 .avatar-caret { color: var(--muted); font-size: 0.7rem; display: inline-flex; margin-left: 0.2rem; }
 
 /* Modal d'inici de sessió / registre */
@@ -610,6 +613,8 @@ body.on-home .nav-search { display: none; }
 .detail-meta { color: var(--text-soft); margin-bottom: 1rem; display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center; font-size: 0.92rem; }
 .detail-meta .meta-pill { background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.78rem; }
 .detail-meta .pill-anime { color: #ffd9a8; border-color: rgba(255, 190, 120, 0.45); }
+.detail-meta .pill-rating { display: inline-flex; align-items: center; gap: 0.3rem; color: #ffe9b0; border-color: rgba(255, 220, 130, 0.4); }
+.detail-meta .pill-rating svg { color: #f5c95a; }
 .detail-ca-info { margin-top: 0.7rem; }
 .detail-ca-info .pill-ca { color: var(--amber-bright); border-color: var(--amber-glow); }
 /* Files de proveïdors "On veure-ho" */

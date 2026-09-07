@@ -99,9 +99,22 @@ CREATE TABLE IF NOT EXISTS sync_state (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS title_sources (
+  title_id TEXT NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,                -- '3cat', 'filmincat', ...
+  kind TEXT NOT NULL DEFAULT 'link',     -- 'free' | 'flatrate' | 'rent' | 'buy' | 'link'
+  url TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (title_id, provider)
+);
+
 CREATE INDEX IF NOT EXISTS idx_titles_type ON titles(type);
 CREATE INDEX IF NOT EXISTS idx_titles_year ON titles(year);
 CREATE INDEX IF NOT EXISTS idx_titles_popularity ON titles(popularity DESC);
+CREATE INDEX IF NOT EXISTS idx_titles_created ON titles(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_titles_sort_title
+  ON titles(COALESCE(NULLIF(catalan_title, ''), original_title) COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_titles_anime ON titles(is_anime);
 CREATE INDEX IF NOT EXISTS idx_titles_details ON titles(details_synced);
 CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
@@ -228,6 +241,7 @@ export interface TitleFilters {
 
 const SORTS: Record<string, string> = {
   popularity: 't.popularity DESC',
+  new: 't.created_at DESC, t.popularity DESC',
   year: 't.year DESC, t.popularity DESC',
   rating: 't.vote_average DESC, t.popularity DESC',
   title: 'COALESCE(NULLIF(t.catalan_title, \'\'), t.original_title) COLLATE NOCASE ASC',
@@ -285,8 +299,97 @@ export function getTitle(db: Database.Database, id: string): Record<string, unkn
   const t = db.prepare('SELECT * FROM titles WHERE id = ?').get(id) as Record<string, unknown> | undefined;
   if (!t) return null;
   const row = parseRow(t);
-  row.providers = parseProviders(String(t.provider_data || ''));
+  const displayTitle = String(t.catalan_title || t.original_title || '');
+  row.providers = getProvidersFor(db, id, String(t.provider_data || ''), displayTitle);
+  row.search_links = getSearchLinksFor(db, id, displayTitle);
   return row;
+}
+
+export interface SourceUpsert {
+  titleId: string;
+  provider: string;
+  kind: string;
+  url: string;
+}
+
+export function upsertTitleSource(db: Database.Database, s: SourceUpsert): void {
+  db.prepare(
+    `INSERT INTO title_sources (title_id, provider, kind, url, created_at, updated_at)
+     VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+     ON CONFLICT(title_id, provider) DO UPDATE SET kind = excluded.kind, url = excluded.url, updated_at = datetime('now')`
+  ).run(s.titleId, s.provider, s.kind, s.url);
+}
+
+export function clearTitleSources(db: Database.Database, provider: string): void {
+  db.prepare('DELETE FROM title_sources WHERE provider = ?').run(provider);
+}
+
+export function sourceStats(db: Database.Database): Record<string, number> {
+  const rows = db.prepare('SELECT provider, COUNT(*) AS c FROM title_sources GROUP BY provider').all() as { provider: string; c: number }[];
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.provider] = r.c;
+  return out;
+}
+
+/** Noms de marca per als proveïdors de fonts pròpies. */
+const SOURCE_NAMES: Record<string, string> = {
+  '3cat': '3Cat',
+  'filmincat': 'FilminCAT',
+};
+
+/** URL de cerca dins una plataforma per a un títol. */
+export function providerSearchUrl(provider: string, title: string): string {
+  const q = encodeURIComponent(title);
+  const p = provider.toLowerCase();
+  if (p.includes('3cat') || p.includes('3 cat') || p.includes('ccma')) {
+    return `https://www.3cat.cat/cercador/?text=${q}`;
+  }
+  if (p.includes('filmin')) {
+    return `https://www.filmin.cat/cerca?text=${q}`;
+  }
+  if (p.includes('prime') || p.includes('amazon')) {
+    return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}`;
+  }
+  if (p.includes('netflix')) {
+    return `https://www.netflix.com/search?q=${q}`;
+  }
+  if (p.includes('apple')) {
+    return `https://tv.apple.com/search?term=${q}`;
+  }
+  if (p.includes('disney')) {
+    return `https://www.disneyplus.com/search?q=${q}`;
+  }
+  return '';
+}
+
+/** Proveïdors d'un títol: fonts pròpies (3Cat...) + watch/providers de TMDb. */
+function getProvidersFor(db: Database.Database, titleId: string, providerData: string, displayTitle: string): ProviderEntry[] {
+  const out: ProviderEntry[] = [];
+  const rows = db.prepare('SELECT provider, kind, url FROM title_sources WHERE title_id = ?').all(titleId) as { provider: string; kind: string; url: string }[];
+  for (const r of rows) {
+    out.push({ name: SOURCE_NAMES[r.provider] || r.provider, kind: r.kind === 'free' ? 'free' : r.kind === 'link' ? 'flatrate' : (r.kind as ProviderEntry['kind']), url: r.url });
+  }
+  const tmdb = parseProviders(providerData);
+  // evitem duplicats pel mateix nom
+  const seen = new Set(out.map((p) => p.name.toLowerCase()));
+  for (const p of tmdb) {
+    if (seen.has(p.name.toLowerCase())) continue;
+    // Els proveïdors coneguts reben un enllaç de cerca directe; la resta, la
+    // pàgina watch de TMDb.
+    const direct = providerSearchUrl(p.name, displayTitle);
+    out.push({ ...p, url: direct || p.url });
+  }
+  return out;
+}
+
+/** Enllaços de cerca quan no sabem que hi és (3Cat cercador + FilminCAT). */
+function getSearchLinksFor(db: Database.Database, titleId: string, title: string): { name: string; url: string }[] {
+  const has3cat = !!db.prepare("SELECT 1 FROM title_sources WHERE title_id = ? AND provider = '3cat'").get(titleId);
+  const links: { name: string; url: string }[] = [];
+  const q = encodeURIComponent(title);
+  if (!has3cat) links.push({ name: '3Cat', url: `https://www.3cat.cat/cercador/?text=${q}` });
+  links.push({ name: 'FilminCAT', url: `https://www.filmin.cat/cerca?text=${q}` });
+  return links;
 }
 
 export interface ProviderEntry {

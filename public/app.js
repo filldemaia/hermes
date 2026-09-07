@@ -107,6 +107,7 @@ const ICON_PLAY_SMALL = '<span class="play-tri-ic"><svg width="22" height="22" v
 const ICON_POSTER_PLACEHOLDER = '<svg class="poster-ph" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L7 20"/></svg>';
 const ICON_CHEV_L = '<svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"/></svg>';
 const ICON_CHEV_R = '<svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9,18 15,12 9,6"/></svg>';
+const ICON_STAR = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>';
 
 /* Esquelets de càrrega (shimmer) */
 function skeletonGrid(n) {
@@ -206,10 +207,47 @@ function buildQuery(extra = {}) {
   if (state.type) params.set('type', state.type);
   if (state.genre) params.set('genre', state.genre);
   if (state.year) params.set('year', state.year);
+  if (!showAnimeEnabled()) params.set('anime', '0');
   params.set('page', state.page);
   params.set('limit', state.limit);
   Object.entries(extra).forEach(([k, v]) => { if (v) params.set(k, v); });
   return params.toString();
+}
+
+/* ── Preferència: mostrar animes (toggle del compte) ── */
+const ANIME_PREF_KEY = 'hermes.showAnime';
+function showAnimeEnabled() {
+  return localStorage.getItem(ANIME_PREF_KEY) !== '0';
+}
+function setShowAnime(on) {
+  localStorage.setItem(ANIME_PREF_KEY, on ? '1' : '0');
+  updateAnimeToggleUI();
+  // Si hi ha sessió, persistim també al compte
+  if (activeProfileId()) {
+    fetch('/api/me/preferences', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...requestHeaders() },
+      body: JSON.stringify({ show_anime: on })
+    }).catch(() => {});
+  }
+  state.page = 1;
+  renderLibrary();
+}
+function updateAnimeToggleUI() {
+  const el = $('#animeToggleState');
+  if (el) el.textContent = showAnimeEnabled() ? 'Activats' : 'Desactivats';
+}
+
+/** Sincronitza la preferència local amb la del compte en iniciar sessió. */
+async function loadAnimePrefFromServer() {
+  if (!activeProfileId()) return;
+  try {
+    const prefs = await api('/api/me/preferences');
+    if (prefs && typeof prefs.show_anime === 'boolean') {
+      localStorage.setItem(ANIME_PREF_KEY, prefs.show_anime ? '1' : '0');
+      updateAnimeToggleUI();
+    }
+  } catch { /* sense sessió vàlida */ }
 }
 
 async function renderLibrary() {
@@ -339,6 +377,29 @@ async function renderHome(titles) {
     }
   } catch (e) { /* sense llista */ }
 
+  // Últimes incorporacions al catàleg
+  let newRows = '';
+  try {
+    const news = await api(`/api/titles?sort=new&limit=24${showAnimeEnabled() ? '' : '&anime=0'}`);
+    if (news.data && news.data.length) {
+      newRows = `
+        <section class="row" data-group="nou">
+          <div class="row-head">
+            <h2 class="row-title">Nou al catàleg</h2>
+            <div class="row-side">
+              <span class="row-count">${news.total} al total</span>
+              <span class="row-arrows">
+                <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
+                <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
+              </span>
+            </div>
+          </div>
+          <div class="hscroll">${news.data.map(posterCard).join('')}</div>
+        </section>
+      `;
+    }
+  } catch (e) { /* sense novetats */ }
+
   // Continuar veient: episodis en progrés a l'Inici
   let contRow = '';
   try {
@@ -402,7 +463,7 @@ async function renderHome(titles) {
           </span>
         </div>
       </div>
-      <div class="hscroll">${row.list.slice(0, 24).map(posterCard).join('')}</div>
+      <div class="hscroll">${row.list.map(posterCard).join('')}</div>
     </section>
   `).join('');
 
@@ -413,6 +474,7 @@ async function renderHome(titles) {
       ${hero ? '' : '<h1 class="page-title">Catàleg</h1>'}
       ${rows || '<div class="empty">No hi ha títols encara.</div>'}
     </div>
+    ${newRows}
     ${contRow}
   `;
 
@@ -543,6 +605,10 @@ async function renderDetail(id, opts) {
       ? '<span class="meta-pill pill-ca">Original en català</span>'
       : (title.has_ca ? '<span class="meta-pill pill-ca">Doblat/subtitulat en català</span>' : '');
     const playTarget = title.episodes?.[0];
+    const rating = Number(title.vote_average || 0);
+    const ratingHtml = rating > 0
+      ? `<span class="meta-pill pill-rating">${ICON_STAR} ${rating.toFixed(1)}</span>`
+      : '';
 
     // Bloc "On veure-ho": proveïdors amb àudio/subtítols en català (enllaç extern)
     const providers = title.providers || [];
@@ -556,6 +622,14 @@ async function renderDetail(id, opts) {
       </a>`;
     }).join('');
 
+    // Enllaços de cerca quan no tenim l'existència confirmada
+    const searchLinks = (title.search_links || []).map(l => `
+      <a class="episode-item provider-item" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">
+        <span class="episode-num">Cerca</span>
+        <span class="episode-title">${escapeHtml(l.name)}</span>
+        <span class="episode-progress">Obre-hi ${ICON_CHEV_R}</span>
+      </a>`).join('');
+
     content.innerHTML = `
       <button class="btn-arrow" id="backBtn" style="margin-top:1rem;">${ICON_CHEV_L} Torna</button>
       <div class="detail" style="margin-top:0.6rem;">
@@ -567,6 +641,7 @@ async function renderDetail(id, opts) {
             <span class="meta-pill">${escapeHtml(typeLabel)}</span>
             ${title.is_anime ? '<span class="meta-pill pill-anime">Anime</span>' : ''}
             ${title.year ? `<span class="meta-pill">${escapeHtml(title.year)}</span>` : ''}
+            ${ratingHtml}
             ${title.original_title !== (title.catalan_title || title.original_title) ? `<span>${escapeHtml(title.original_title)}</span>` : ''}
           </div>
           ${(title.synopsis_ca || title.synopsis_fallback) ? `<p class="detail-synopsis">${escapeHtml(title.synopsis_ca || title.synopsis_fallback)}</p>` : ''}
@@ -585,6 +660,11 @@ async function renderDetail(id, opts) {
       <div class="episodes">
         <h2>On veure-ho en català</h2>
         <div class="episode-list">${providerRows}</div>
+      </div>` : ''}
+      ${searchLinks ? `
+      <div class="episodes">
+        <h2>No el trobes? Cerca'l aquí</h2>
+        <div class="episode-list">${searchLinks}</div>
       </div>` : ''}
     `;
 
@@ -1370,6 +1450,7 @@ function setSession(id, name) {
   localStorage.setItem(PROFILE_KEY, id);
   localStorage.setItem('hermes.activeName', name);
   loadWatchlist();
+  loadAnimePrefFromServer();
   updateAuthUI();
   setSection('inici');
 }
@@ -1480,6 +1561,8 @@ function setSection(section, opts) {
 
 // Inicialització
 function init() {
+  loadAnimePrefFromServer();
+  updateAnimeToggleUI();
   document.querySelectorAll('.section-link').forEach(btn => {
     btn.onclick = () => setSection(btn.dataset.section);
   });
@@ -1510,10 +1593,14 @@ function init() {
   });
   $('#authPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuth(); });
 
-  // Menú del compte (tancar sessió)
+  // Menú del compte (tancar sessió + toggle animes)
   $('#profileBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     $('#accountDropdown').toggleAttribute('hidden');
+  });
+  $('#animeToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    setShowAnime(!showAnimeEnabled());
   });
   $('#logoutBtn').addEventListener('click', logout);
   document.addEventListener('click', () => {

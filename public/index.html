@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=19">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=19">
   <link rel="icon" type="image/png" href="/icon-192.png?v=27">
-  <link rel="stylesheet" href="/style.css?v=37">
+  <link rel="stylesheet" href="/style.css?v=38">
 </head>
 <body>
 
@@ -65,6 +65,10 @@
             </span>
           </button>
           <div class="account-dropdown" id="accountDropdown" hidden>
+            <button id="animeToggle" class="dropdown-item dropdown-toggle">
+              <span>Animes</span>
+              <span class="toggle-state" id="animeToggleState">Activats</span>
+            </button>
             <button id="logoutBtn" class="dropdown-item">Tancar sessió</button>
           </div>
         </div>
@@ -202,6 +206,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/app.js?v=35"></script>
+  <script src="/app.js?v=36"></script>
 </body>
 </html>

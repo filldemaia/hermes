@@ -1,0 +1,9 @@
+# Backup diari de la BD de Hermes (03:30)
+[Unit]
+Description=Hermes — backup diari de la base de dades
+
+[Service]
+Type=oneshot
+ExecStart=/opt/hermes/deploy/backup-db.sh
+User=hermes
+Group=hermes

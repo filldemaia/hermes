@@ -1,0 +1,11 @@
+# Activa el backup diari (amb persistència: l'executa en arrencar si va passar)
+[Unit]
+Description=Hermes — temporitzador del backup diari de la BD
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

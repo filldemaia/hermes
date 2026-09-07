@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { env } from '../util';
 import * as dbq from '../db';
+import { sync3CatSources } from './sources';
 
 const BASE = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p';
@@ -110,7 +111,9 @@ async function syncOriginals(db: Database.Database, genreMap: Record<number, str
   for (const kind of ['movie', 'series'] as const) {
     const path = kind === 'movie' ? '/discover/movie' : '/discover/tv';
     const stateKey = `originals_${kind}_page`;
-    let page = Number(dbq.getSyncState(db, stateKey) || '1') || 1;
+    const saved = dbq.getSyncState(db, stateKey);
+    if (saved === 'done') continue; // ja completat: no rescanejar a cada arrencada
+    let page = Number(saved || '1') || 1;
     let totalPages = 1;
     do {
       const d = (await tmdbJson(path, {
@@ -195,6 +198,12 @@ export async function runCatalogSync(db: Database.Database): Promise<void> {
     await syncOriginals(db, genreMap);
     await syncDetails(db);
     dbq.setSyncState(db, 'sync_last_ok', new Date().toISOString());
+    // Fonts externes de "on veure-ho": un cop el catàleg TMDb és al dia.
+    try {
+      await sync3CatSources(db);
+    } catch (e) {
+      dbq.setSyncState(db, 'sources_3cat_last_error', String((e as Error).message || e));
+    }
   } catch (e) {
     dbq.setSyncState(db, 'sync_last_error', String((e as Error).message || e));
   } finally {
