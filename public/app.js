@@ -455,7 +455,6 @@ function renderWelcome() {
         <div class="search">
           <input type="search" id="searchInput" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." autocomplete="off" enterkeyhint="search">
         </div>
-        ${activeProfileId() ? '' : '<button class="welcome-auth" id="welcomeAuth">Entra</button>'}
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
       </div>
       <footer class="legal-footer">
@@ -469,10 +468,8 @@ function renderWelcome() {
     </section>
   `;
 
-  $('#welcomeAuth')?.addEventListener('click', () => openAuth('login'));
-
-  // ── Mòbil: cerca en viu a pantalla completa (la barra puja a dalt de tot) ──
-  if (isMobile()) {
+  // ── Cerca en viu a pantalla completa (PC i mòbil): resultats sense navegar ──
+  {
     content.insertAdjacentHTML('beforeend', `
       <div class="search-live hidden" id="searchLive">
         <div class="search-live-bar">
@@ -535,6 +532,7 @@ function renderWelcome() {
       liveTimer = setTimeout(runLiveSearch, 220);
     });
     liveInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeSearchLive(); return; }
       if (e.key !== 'Enter') return;
       e.preventDefault();
       const q = liveInput.value.trim();

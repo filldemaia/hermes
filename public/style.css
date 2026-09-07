@@ -288,15 +288,6 @@ body.on-home { overflow: hidden; }
 }
 .welcome-screen .search input:focus { border-bottom-color: var(--amber); box-shadow: none; }
 .welcome-screen .search input::placeholder { color: var(--muted); }
-/* Accés discret des de la benvinguda (sense topbar no hi ha botó Entra) */
-.welcome-auth {
-  position: fixed; top: 1.1rem; right: clamp(1rem, 3vw, 2.4rem); z-index: 40;
-  background: transparent; border: 1px solid var(--border-strong);
-  color: var(--text-soft); border-radius: 999px;
-  padding: 0.4rem 1.1rem; font-size: 0.85rem; cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-.welcome-auth:hover { color: var(--amber-bright); border-color: var(--amber-glow); }
 /* Peu legal clavat a baix de la pantalla */
 .legal-footer {
   width: 100%; margin-top: auto;
@@ -334,6 +325,7 @@ body.on-home { overflow: hidden; }
 }
 .search-live-close:hover { color: var(--amber-bright); border-color: var(--amber-glow); }
 .search-live-results { flex: 1; overflow-y: auto; padding: 0.8rem 0.9rem 2rem; }
+.search-live-results > .search-live-item, .search-live-results > .search-live-empty { max-width: 720px; margin-left: auto; margin-right: auto; }
 .search-live-item {
   display: flex; align-items: center; gap: 0.8rem;
   width: 100%; background: none; border: none;
@@ -342,6 +334,7 @@ body.on-home { overflow: hidden; }
   -webkit-tap-highlight-color: transparent;
 }
 .search-live-item:active { background: var(--surface); }
+.search-live-item:hover { background: var(--surface); }
 .search-live-item img {
   width: 46px; aspect-ratio: 2/3; object-fit: cover;
   border-radius: 6px; background: var(--surface-2); flex: none;
