@@ -453,11 +453,11 @@ function renderWelcome() {
       ${activeProfileId() ? '' : '<button class="welcome-auth" id="welcomeAuth">Entra</button>'}
       <div class="welcome-inner">
         <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></span>
-        <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
         <div class="search">
           <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
         </div>
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
+        <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
       </div>
       <footer class="legal-footer">
         <p class="legal-note">
@@ -471,6 +471,78 @@ function renderWelcome() {
   `;
 
   $('#welcomeAuth')?.addEventListener('click', () => openAuth('login'));
+
+  // ── Mòbil: cerca en viu a pantalla completa (la barra puja a dalt de tot) ──
+  if (isMobile()) {
+    content.insertAdjacentHTML('beforeend', `
+      <div class="search-live hidden" id="searchLive">
+        <div class="search-live-bar">
+          <input type="search" id="searchLiveInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
+          <button class="search-live-close" id="searchLiveClose" aria-label="Tanca la cerca">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="search-live-results" id="searchLiveResults"></div>
+      </div>
+    `);
+
+    const liveWrap = $('#searchLive');
+    const liveInput = $('#searchLiveInput');
+    const resultsEl = $('#searchLiveResults');
+    let liveTimer;
+    let liveSeq = 0;
+
+    const closeSearchLive = () => {
+      liveWrap.classList.add('hidden');
+      resultsEl.innerHTML = '';
+    };
+
+    const runLiveSearch = async () => {
+      const q = liveInput.value.trim();
+      const seq = ++liveSeq;
+      if (!q) { resultsEl.innerHTML = ''; return; }
+      try {
+        const d = await api(`/api/titles?q=${encodeURIComponent(q)}&limit=14&sort=popularity${showAnimeEnabled() ? '' : '&anime=0'}`);
+        if (seq !== liveSeq) return; // ja hi ha una cerca més recent
+        if (!d.data.length) {
+          resultsEl.innerHTML = `<div class="search-live-empty">Cap resultat per «${escapeHtml(q)}»</div>`;
+          return;
+        }
+        resultsEl.innerHTML = d.data.map(t => `
+          <button class="search-live-item" data-id="${t.id}">
+            ${t.poster_url
+              ? `<img src="${escapeHtml(t.poster_url)}" alt="" loading="lazy">`
+              : '<span class="sl-ph"></span>'}
+            <span class="sl-info">
+              <span class="sl-title">${escapeHtml(t.catalan_title || t.original_title)}</span>
+              <span class="sl-meta">${t.year ? escapeHtml(t.year) + ' · ' : ''}${t.type === 'movie' ? 'Pel·lícula' : 'Sèrie'}</span>
+            </span>
+          </button>`).join('');
+        resultsEl.querySelectorAll('.search-live-item').forEach(el => {
+          el.onclick = () => { closeSearchLive(); renderDetail(el.dataset.id); };
+        });
+      } catch { /* xarxa: no res, l'usuari seguirà escrivint */ }
+    };
+
+    // Tocar la barra de la benvinguda → obre la cerca a pantalla completa
+    $('#searchInput').addEventListener('focus', () => {
+      $('#searchInput').blur(); // aquest input és només el gallet
+      liveWrap.classList.remove('hidden');
+      liveInput.value = $('#searchInput').value;
+      liveInput.focus();
+    });
+    liveInput.addEventListener('input', () => {
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(runLiveSearch, 220);
+    });
+    liveInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const q = liveInput.value.trim();
+      if (q) { closeSearchLive(); state.search = q; setSection('cataleg', { keepSearch: true }); }
+    });
+    $('#searchLiveClose').addEventListener('click', closeSearchLive);
+  }
 
   $('#revealBtn')?.addEventListener('click', (e) => {
     e.preventDefault();

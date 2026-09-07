@@ -224,12 +224,10 @@ body.on-home .nav-search { display: none; }
   font-size: clamp(2.4rem, 6vw, 4rem);
   margin-bottom: clamp(1.6rem, 5vh, 3.6rem);
 }
-.welcome-screen .welcome-tagline {
-  margin: 0 auto clamp(2.2rem, 6vh, 4rem);
-  font-size: clamp(1rem, 2vw, 1.2rem);
-}
-.welcome-screen .search { margin-bottom: clamp(2.6rem, 7vh, 4.5rem); }
-.welcome-screen .btn-reveal { margin-bottom: 2vh; }
+/* Ordre: logo → cerca → botó → lema (el text tanca el bloc) */
+.welcome-screen .search { margin-bottom: clamp(1.6rem, 4vh, 2.4rem); }
+.welcome-screen .btn-reveal { margin-bottom: clamp(1.8rem, 4.5vh, 2.8rem); }
+.welcome-screen .welcome-tagline { margin: 0 auto; font-size: clamp(1rem, 2vw, 1.2rem); }
 /* Cerca en format línia (subratllat), sense bombolla */
 .welcome-screen .search { max-width: 540px; }
 .welcome-screen .search input {
@@ -256,6 +254,59 @@ body.on-home .nav-search { display: none; }
   text-align: center;
 }
 .legal-footer .legal-note { margin: 0 auto; }
+
+/* ── Cerca en viu a pantalla completa (mòbil) ── */
+.search-live {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
+.search-live.hidden { display: none; }
+.search-live-bar {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: calc(0.9rem + env(safe-area-inset-top)) 1rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.search-live-bar input {
+  flex: 1; background: transparent; border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0; color: var(--text);
+  font-size: 1.2rem; padding: 0.55rem 0.2rem; outline: none;
+}
+.search-live-bar input:focus { border-bottom-color: var(--amber); }
+.search-live-bar input::placeholder { color: var(--muted); }
+.search-live-close {
+  width: 2.4rem; height: 2.4rem; flex: none;
+  border: 1px solid var(--border); border-radius: 50%;
+  background: var(--surface); color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.search-live-close:hover { color: var(--amber-bright); border-color: var(--amber-glow); }
+.search-live-results { flex: 1; overflow-y: auto; padding: 0.8rem 0.9rem 2rem; }
+.search-live-item {
+  display: flex; align-items: center; gap: 0.8rem;
+  width: 100%; background: none; border: none;
+  color: var(--text); padding: 0.45rem 0.5rem; border-radius: 10px;
+  cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-live-item:active { background: var(--surface); }
+.search-live-item img {
+  width: 46px; aspect-ratio: 2/3; object-fit: cover;
+  border-radius: 6px; background: var(--surface-2); flex: none;
+}
+.search-live-item .sl-ph {
+  width: 46px; aspect-ratio: 2/3; border-radius: 6px;
+  background: var(--surface-2); flex: none;
+}
+.search-live-item .sl-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.search-live-item .sl-title {
+  font-weight: 600; font-size: 0.92rem;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.search-live-item .sl-meta { color: var(--muted); font-size: 0.74rem; }
+.search-live-empty { color: var(--muted); text-align: center; padding: 2.4rem 1rem; line-height: 1.6; }
 
 /* Avís legal del peu de benvinguda */
 .legal-note {
@@ -1034,6 +1085,9 @@ body.on-home .nav-search { display: none; }
     min-height: 100dvh;
     padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
   }
+  /* Barra de cerca de la benvinguda més gran al mòbil */
+  .welcome-screen .search { max-width: none; width: 100%; }
+  .welcome-screen .search input { font-size: 1.15rem; padding: 0.9rem 0.35rem; }
   /* (la distribució és responsiva; no cal res especial al mòbil) */
   .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
   .detail { flex-direction: column; }
