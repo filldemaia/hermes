@@ -306,7 +306,7 @@ async function renderLibrary() {
       // Cerca: graella amb scroll infinit (les pòsters carreguen en entrar a la vista)
       const searchBar = isMobile() ? `
         <div class="search-inline">
-          <input type="search" id="inlineSearch" value="${escapeHtml(state.search)}" placeholder="Cerca per títol..." enterkeyhint="search" autocomplete="off">
+          <input type="search" id="inlineSearch" value="${escapeHtml(state.search)}" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." enterkeyhint="search" autocomplete="off">
         </div>` : '';
       content.innerHTML = `${searchBar}<h1 class="page-title">${state.search ? 'Resultats de la cerca' : sectionTitle}</h1>`;
       setupInfiniteGrid(content, data);
@@ -450,14 +450,13 @@ function renderWelcome() {
   const content = $('#content');
   content.innerHTML = `
     <section class="welcome welcome-revealed welcome-screen">
-      ${activeProfileId() ? '' : '<button class="welcome-auth" id="welcomeAuth">Entra</button>'}
       <div class="welcome-inner">
         <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></span>
         <div class="search">
-          <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
+          <input type="search" id="searchInput" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." autocomplete="off" enterkeyhint="search">
         </div>
+        ${activeProfileId() ? '' : '<button class="welcome-auth" id="welcomeAuth">Entra</button>'}
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
-        <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
       </div>
       <footer class="legal-footer">
         <p class="legal-note">
@@ -477,7 +476,7 @@ function renderWelcome() {
     content.insertAdjacentHTML('beforeend', `
       <div class="search-live hidden" id="searchLive">
         <div class="search-live-bar">
-          <input type="search" id="searchLiveInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
+          <input type="search" id="searchLiveInput" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." autocomplete="off" enterkeyhint="search">
           <button class="search-live-close" id="searchLiveClose" aria-label="Tanca la cerca">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>

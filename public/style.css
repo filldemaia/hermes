@@ -229,7 +229,7 @@ body.on-home .nav-search { display: none; }
 .welcome-screen .btn-reveal { margin-bottom: clamp(1.8rem, 4.5vh, 2.8rem); }
 .welcome-screen .welcome-tagline { margin: 0 auto; font-size: clamp(1rem, 2vw, 1.2rem); }
 /* Cerca en format línia (subratllat), sense bombolla */
-.welcome-screen .search { max-width: 540px; }
+.welcome-screen .search { width: 100%; max-width: 720px; }
 .welcome-screen .search input {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
@@ -1089,7 +1089,7 @@ body.on-home .nav-search { display: none; }
   .welcome-screen .search { max-width: none; width: 100%; }
   .welcome-screen .search input { font-size: 1.15rem; padding: 0.9rem 0.35rem; }
   /* (la distribució és responsiva; no cal res especial al mòbil) */
-  .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
+  .topbar .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
   .detail { flex-direction: column; }
   .detail-poster { width: 100%; max-width: 220px; }
   .hero { aspect-ratio: 16 / 9; min-height: 220px; max-height: 420px; }
