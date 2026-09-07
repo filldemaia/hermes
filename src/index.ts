@@ -636,6 +636,22 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Ruta no trobada' });
 });
 
+// ── Fallback SPA: qualsevol ruta (recàrrega de pàgina, enllaç directe) ──────
+// /cataleg, /pelicules, /usuari, /detall/:id... han de servir l'app en lloc
+// de donar «Cannot GET». Les rutes /api ja han estat ateses més amunt.
+const INDEX_HTML = path.join(PUBLIC_DIR, 'index.html');
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'Ruta no trobada' });
+    return;
+  }
+  res.sendFile(INDEX_HTML, (err) => {
+    if (err && !res.headersSent) {
+      res.status(err.name === 'ECONNABORTED' ? 500 : 500).end();
+    }
+  });
+});
+
 // ── Arrencada ───────────────────────────────────────────────────────────────
 
 const PORT = Number(env('PORT', '3000'));
