@@ -1430,21 +1430,72 @@ function profileInitial(name) { return (name || '?').trim().charAt(0).toUpperCas
 
 // ── Inici de sessió / registre ──────────────────────────────────────
 let authMode = 'login';
-function openAuth(mode) {
+
+const USERNAME_RE = /^[a-zA-Z0-9._-]{3,20}$/;
+
+function setAuthMode(mode) {
   authMode = mode;
-  $('#authTitle').textContent = mode === 'signup' ? 'Crea el teu compte' : 'Inicia sessió';
-  $('#authSubmit').textContent = mode === 'signup' ? 'Registra\'t' : 'Inicia sessió';
-  $('#authSwitch').textContent = mode === 'signup'
-    ? 'Ja tens compte? Inicia sessió'
-    : 'No tens compte? Registra\'t';
+  const isSignup = mode === 'signup';
+  $('#authTitle').textContent = isSignup ? 'Crea el teu compte' : 'Inicia sessió';
+  $('#authSubmit').textContent = isSignup ? 'Registra\'t' : 'Inicia sessió';
+  $('#authSwitch').textContent = isSignup ? 'Ja tens compte? Inicia sessió' : 'No tens compte? Registra\'t';
+  $('#authPassword').autocomplete = isSignup ? 'new-password' : 'current-password';
+  $('#confirmField').hidden = !isSignup;
+}
+
+function setPasswordVisible(visible) {
+  for (const id of ['authPassword', 'authPassword2']) {
+    const input = document.getElementById(id);
+    if (input) input.type = visible ? 'text' : 'password';
+  }
+  for (const eye of [$('#passwordEye'), $('#passwordEye2')]) {
+    if (eye) {
+      eye.classList.toggle('active', visible);
+      eye.setAttribute('aria-pressed', visible ? 'true' : 'false');
+    }
+  }
+}
+
+function openAuth(mode) {
+  setAuthMode(mode);
   $('#authError').textContent = '';
   $('#authName').value = '';
   $('#authPassword').value = '';
+  $('#authPassword2').value = '';
+  $('#authConfirmHint').textContent = '';
+  $('#authNameHint').classList.remove('auth-hint-error');
+  setPasswordVisible(false);
   $('#authOverlay').classList.remove('hidden');
   setTimeout(() => $('#authName').focus(), 30);
 }
 function closeAuth() {
   $('#authOverlay').classList.add('hidden');
+}
+
+/** Validació del formulari; retorna null si és correcte o el missatge d'error. */
+function validateAuthForm() {
+  const name = $('#authName').value.trim();
+  const password = $('#authPassword').value;
+  if (!name) return "Omple el nom d'usuari.";
+  if (!USERNAME_RE.test(name)) return "El nom d'usuari ha de tenir 3-20 caràcters (lletres, números, punt, guió o guió baix).";
+  if (!password) return 'Omple la contrasenya.';
+  if (password.length < 6) return 'La contrasenya ha de tenir com a mínim 6 caràcters.';
+  if (authMode === 'signup') {
+    const confirm = $('#authPassword2').value;
+    if (!confirm) return 'Confirma la contrasenya.';
+    if (password !== confirm) return 'Les contrasenyes no coincideixen.';
+  }
+  return null;
+}
+
+function setAuthFieldHints() {
+  const name = $('#authName').value.trim();
+  $('#authNameHint').classList.toggle('auth-hint-error', !!name && !USERNAME_RE.test(name));
+  if (authMode === 'signup') {
+    const p1 = $('#authPassword').value;
+    const p2 = $('#authPassword2').value;
+    $('#authConfirmHint').textContent = p2 && p1 && p1 !== p2 ? 'No coincideixen' : '';
+  }
 }
 function setSession(id, name) {
   localStorage.setItem(PROFILE_KEY, id);
@@ -1461,14 +1512,17 @@ function logout() {
   applyRoute();
 }
 async function submitAuth() {
-  const name = $('#authName').value.trim();
-  const password = $('#authPassword').value;
-  if (!name || !password) {
-    $('#authError').textContent = 'Omple el nom d\'usuari i la contrasenya.';
+  const clientError = validateAuthForm();
+  if (clientError) {
+    $('#authError').textContent = clientError;
     return;
   }
+  const name = $('#authName').value.trim();
+  const password = $('#authPassword').value;
   $('#authError').textContent = '';
   const url = authMode === 'signup' ? '/api/profiles' : '/api/login';
+  const btn = $('#authSubmit');
+  btn.disabled = true;
   try {
     const r = await fetch(url, {
       method: 'POST',
@@ -1481,6 +1535,8 @@ async function submitAuth() {
     setSession(data.id, data.display_name || name);
   } catch (e) {
     $('#authError').textContent = e.message || 'Ha fallat la connexió. Torna-ho a provar.';
+  } finally {
+    btn.disabled = false;
   }
 }
 function updateAuthUI() {
@@ -1584,6 +1640,20 @@ function init() {
   $('#authClose').addEventListener('click', closeAuth);
   $('#authOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAuth(); });
   $('#authSubmit').addEventListener('click', submitAuth);
+  $('#passwordEye').addEventListener('click', () => {
+    setPasswordVisible($('#authPassword').type === 'password');
+  });
+  $('#passwordEye2').addEventListener('click', () => {
+    setPasswordVisible($('#authPassword').type === 'password');
+  });
+  $('#authName').addEventListener('input', setAuthFieldHints);
+  $('#authPassword').addEventListener('input', setAuthFieldHints);
+  $('#authPassword2').addEventListener('input', setAuthFieldHints);
+  $('#authName').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#authPassword').focus(); } });
+  $('#authPassword2').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
+  $('#authPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); if (authMode === 'signup') $('#authPassword2').focus(); else submitAuth(); }
+  });
 
   // ── Cerca de la navbar (barra fixa) ──
   $('#navbarSearch').addEventListener('input', () => {
@@ -1591,7 +1661,6 @@ function init() {
     state.page = 1;
     renderLibrary();
   });
-  $('#authPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuth(); });
 
   // Menú del compte (tancar sessió + toggle animes)
   $('#profileBtn').addEventListener('click', (e) => {

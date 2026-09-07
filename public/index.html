@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=19">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=19">
   <link rel="icon" type="image/png" href="/icon-192.png?v=27">
-  <link rel="stylesheet" href="/style.css?v=38">
+  <link rel="stylesheet" href="/style.css?v=39">
 </head>
 <body>
 
@@ -44,34 +44,19 @@
 
     <div class="top-actions">
       <div class="guest-menu" id="guestMenu">
-        <div class="guest-trigger-wrap">
-          <button id="guestBtn" class="btn-ghost-nav" title="Accés">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>Entra</span>
-          </button>
-          <div class="guest-dropdown" id="guestDropdown" hidden>
-            <button class="dropdown-item" id="guestLogin">Inicia sessió</button>
-            <button class="dropdown-item" id="guestSignup">Registra't</button>
-          </div>
-        </div>
+        <button id="guestBtn" class="btn-ghost-nav" title="Accés">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Entra</span>
+        </button>
       </div>
       <div class="account-menu" id="accountMenu" hidden>
-        <div class="account-trigger-wrap">
-          <button id="profileBtn" class="btn-profile" title="El meu compte">
-            <span class="avatar" id="avatarLetter">?</span>
-            <span class="avatar-name" id="profileName">Compte</span>
-            <span class="avatar-caret">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
-            </span>
-          </button>
-          <div class="account-dropdown" id="accountDropdown" hidden>
-            <button id="animeToggle" class="dropdown-item dropdown-toggle">
-              <span>Animes</span>
-              <span class="toggle-state" id="animeToggleState">Activats</span>
-            </button>
-            <button id="logoutBtn" class="dropdown-item">Tancar sessió</button>
-          </div>
-        </div>
+        <button id="profileBtn" class="btn-profile" title="El meu compte">
+          <span class="avatar" id="avatarLetter">?</span>
+          <span class="avatar-name" id="profileName">Compte</span>
+          <span class="avatar-caret">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
+          </span>
+        </button>
       </div>
     </div>
   </header>
@@ -109,6 +94,19 @@
     </button>
   </nav>
 
+  <!-- ── Desplegables de sessió (independents de la topbar: visibles també a mòbil) ── -->
+  <div class="guest-dropdown" id="guestDropdown" hidden>
+    <button class="dropdown-item" id="guestLogin">Inicia sessió</button>
+    <button class="dropdown-item" id="guestSignup">Registra't</button>
+  </div>
+  <div class="account-dropdown" id="accountDropdown" hidden>
+    <button id="animeToggle" class="dropdown-item dropdown-toggle">
+      <span>Animes</span>
+      <span class="toggle-state" id="animeToggleState">Activats</span>
+    </button>
+    <button id="logoutBtn" class="dropdown-item">Tancar sessió</button>
+  </div>
+
   <!-- ── Modal de inici sessió / registre ──────────────────────────── -->
   <div id="authOverlay" class="auth-overlay hidden">
     <div class="auth-box">
@@ -119,11 +117,28 @@
       <div class="auth-body">
         <label class="auth-field">
           <span>Nom d'usuari</span>
-          <input type="text" id="authName" autocomplete="username" maxlength="50">
+          <input type="text" id="authName" autocomplete="username" maxlength="20" inputmode="text" spellcheck="false">
+          <small class="auth-hint" id="authNameHint">3–20 caràcters. Lletres, números, punt, guió i guió baix.</small>
         </label>
         <label class="auth-field">
           <span>Contrasenya</span>
-          <input type="password" id="authPassword" autocomplete="current-password">
+          <span class="password-wrap">
+            <input type="password" id="authPassword" autocomplete="current-password">
+            <button type="button" class="password-eye" id="passwordEye" title="Mostra/amaga la contrasenya" tabindex="-1">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </span>
+          <small class="auth-hint" id="authPasswordHint">Mínim 6 caràcters.</small>
+        </label>
+        <label class="auth-field" id="confirmField" hidden>
+          <span>Confirma la contrasenya</span>
+          <span class="password-wrap">
+            <input type="password" id="authPassword2" autocomplete="new-password">
+            <button type="button" class="password-eye" id="passwordEye2" title="Mostra/amaga la contrasenya" tabindex="-1">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </span>
+          <small class="auth-hint auth-hint-error" id="authConfirmHint"></small>
         </label>
         <p id="authError" class="auth-error"></p>
         <button id="authSubmit" class="btn btn-full">Inicia sessió</button>
@@ -206,6 +221,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/app.js?v=36"></script>
+  <script src="/app.js?v=37"></script>
 </body>
 </html>

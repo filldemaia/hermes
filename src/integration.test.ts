@@ -390,6 +390,46 @@ test('POST /api/profiles + /api/login', async () => {
   assert.equal(bad.status, 401);
 });
 
+test('Validació de registre: nom curt, contrasenya curta i noms duplicats', async () => {
+  const shortName = await fetch(`${base}/api/profiles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: 'ab', password: 'secret123' }),
+  });
+  assert.equal(shortName.status, 400);
+
+  const shortPass = await fetch(`${base}/api/profiles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: 'usuari_valit', password: '123' }),
+  });
+  assert.equal(shortPass.status, 400);
+
+  const invalidChars = await fetch(`${base}/api/profiles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: 'nom amb espais!', password: 'secret123' }),
+  });
+  assert.equal(invalidChars.status, 400);
+
+  const dup = await fetch(`${base}/api/profiles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: 'Prova', password: 'secret123' }),
+  });
+  assert.equal(dup.status, 409);
+});
+
+test('Renom del perfil: nom invàlid rebutjat', async () => {
+  const uid = '00000000-0000-0000-0000-000000000001';
+  const r = await fetch(`${base}/api/profiles/${uid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: 'x' }),
+  });
+  assert.equal(r.status, 400);
+});
+
 test('Preferències: PUT + GET', async () => {
   const uid = '00000000-0000-0000-0000-000000000001';
   await fetch(`${base}/api/me/preferences`, {

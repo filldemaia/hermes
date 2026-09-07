@@ -288,11 +288,21 @@ app.get('/api/profiles', (req, res) => {
   res.json(auth.listProfiles(db, activeUser(req)));
 });
 
+const USERNAME_RE = /^[a-zA-Z0-9._-]{3,20}$/;
+
 app.post('/api/profiles', (req, res) => {
   const name = String((req.body || {}).displayName || '').trim();
   const password = req.body?.password ? String(req.body.password) : null;
   if (!name) {
-    res.status(400).json({ error: 'El nom és obligatori' });
+    res.status(400).json({ error: "El nom d'usuari és obligatori" });
+    return;
+  }
+  if (!USERNAME_RE.test(name)) {
+    res.status(400).json({ error: "El nom ha de tenir 3-20 caràcters: lletres, números, punt, guió o guió baix" });
+    return;
+  }
+  if (password != null && password.length < 6) {
+    res.status(400).json({ error: 'La contrasenya ha de tenir com a mínim 6 caràcters' });
     return;
   }
   if (auth.getUserByName(db, name)) {
@@ -327,6 +337,10 @@ app.delete('/api/profiles/:id', (req, res) => {
 app.patch('/api/profiles/:id', (req, res) => {
   const id = req.params.id;
   const name = String((req.body || {}).displayName || '');
+  if (!USERNAME_RE.test(name.trim())) {
+    res.status(400).json({ error: "El nom ha de tenir 3-20 caràcters: lletres, números, punt, guió o guió baix" });
+    return;
+  }
   const r = auth.renameProfile(db, id, name);
   if (!r.ok) {
     res.status(r.error === 'Perfil no trobat' ? 404 : 400).json({ error: r.error });

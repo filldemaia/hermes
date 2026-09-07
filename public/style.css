@@ -219,24 +219,16 @@ body.on-home .nav-search { display: none; }
   display: inline-flex; align-items: center; gap: 0.4rem;
 }
 .btn-ghost-nav:hover { border-color: var(--amber); color: var(--amber-bright); background: var(--surface-2); }
-/* Menú de convidat (accés sense sessió) */
-.guest-trigger-wrap { position: relative; }
+/* Menús flotants de sessió (panels independents de la topbar) */
 .guest-menu { display: flex; }
-.guest-dropdown {
-  position: absolute; right: 0; top: calc(100% + 0.5rem); min-width: 150px;
+.guest-dropdown, .account-dropdown {
+  position: fixed; top: 3.6rem; right: clamp(1rem, 4vw, 3rem); min-width: 180px;
   background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: 12px; padding: 0.35rem; box-shadow: 0 14px 40px rgba(0,0,0,0.55);
   z-index: 60;
 }
 
-/* Menú del compte (desplegable) */
-.account-trigger-wrap { position: relative; }
-.account-dropdown {
-  position: absolute; right: 0; top: calc(100% + 0.5rem); min-width: 150px;
-  background: var(--surface); border: 1px solid var(--border-strong);
-  border-radius: 12px; padding: 0.35rem; box-shadow: 0 14px 40px rgba(0,0,0,0.55);
-  z-index: 60;
-}
+/* ── Menú del compte ja definit més amunt (panel fixat independent) ── */
 .dropdown-item {
   display: block; width: 100%; text-align: left; background: none; border: none;
   color: var(--text); padding: 0.55rem 0.8rem; border-radius: 8px; cursor: pointer;
@@ -275,11 +267,25 @@ body.on-home .nav-search { display: none; }
 .auth-field span { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.03em; }
 .auth-field input {
   padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); font-size: 0.95rem; outline: none;
+  background: var(--surface); color: var(--text); font-size: 1rem; outline: none;
   transition: border-color 0.18s, box-shadow 0.18s;
   width: 100%; box-sizing: border-box;
 }
 .auth-field input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+/* Contrasenya amb botó per mostrar/amagar */
+.password-wrap { position: relative; display: block; }
+.password-wrap input { padding-right: 2.8rem; }
+.password-eye {
+  position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%);
+  width: 2.1rem; height: 2.1rem; border: none; background: none; cursor: pointer;
+  color: var(--muted); display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+}
+.password-eye:hover { color: var(--amber-bright); background: var(--surface-2); }
+.password-eye.active { color: var(--amber); }
+.auth-hint { font-size: 0.72rem; color: var(--muted); }
+.auth-hint-error { color: #ff8a80; }
+.auth-box { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 .auth-error { color: #ff8a80; font-size: 0.85rem; min-height: 1.2rem; margin: 0 0 0.4rem; }
 .btn-full { width: 100%; }
 .auth-switch { margin: 1rem 0 0; text-align: center; font-size: 0.88rem; color: var(--muted); display: flex; gap: 0.3rem; align-items: center; justify-content: center; flex-wrap: wrap; }
@@ -910,4 +916,7 @@ body.on-home .nav-search { display: none; }
   /* A mòbil el menú de sessió apareix com un petit panell sobre la barra inferior */
   .guest-dropdown { position: fixed; right: 0.5rem; bottom: calc(5.2rem + env(safe-area-inset-bottom)); top: auto; left: auto; min-width: 180px; }
   .account-dropdown { position: fixed; right: 0.5rem; bottom: calc(5.2rem + env(safe-area-inset-bottom)); top: auto; left: auto; min-width: 180px; }
+  /* Modal d'accés compacte i sense zoom d'iOS (inputs a 1rem ja definit) */
+  .auth-box { padding: 1.4rem 1.2rem 1.2rem; border-radius: 14px; }
+  .auth-logo { font-size: 1.3rem; }
 }
