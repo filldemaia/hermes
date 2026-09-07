@@ -9,6 +9,40 @@ const REQ_DELAY_MS = 120; // ~8 peticions/s: lluny del límit de TMDb
 
 const JP = 'JP';
 
+/**
+ * Gèneres TMDb → català (mapa estàtic per id: els gèneres són una llista
+ * fixa i TMDb no en té traducció al català; amb language=ca-ES tornen anglesos).
+ */
+const GENRE_BY_ID: Record<number, string> = {
+  28: 'Acció',
+  12: 'Aventura',
+  16: 'Animació',
+  35: 'Comèdia',
+  80: 'Crim',
+  99: 'Documental',
+  18: 'Drama',
+  10751: 'Familiar',
+  14: 'Fantasia',
+  36: 'Història',
+  27: 'Terror',
+  10402: 'Música',
+  9648: 'Misteri',
+  10749: 'Romàntic',
+  878: 'Ciència-ficció',
+  10770: 'Pel·lícula de televisió',
+  53: 'Thriller',
+  10752: 'Bèl·lica',
+  37: 'Western',
+  10759: 'Acció i aventura',
+  10762: 'Infantil',
+  10763: 'Notícies',
+  10764: 'Realitat',
+  10765: 'Ciència-ficció i fantasia',
+  10766: 'Telenovel·la',
+  10767: 'Tertúlia',
+  10768: 'Guerra i política',
+};
+
 interface DiscoverResult {
   id: number;
   title?: string;
@@ -67,21 +101,9 @@ function imgUrl(p: string | null | undefined, size: string): string | null {
   return p ? `${IMG}/${size}${p}` : null;
 }
 
-async function genreNames(): Promise<Record<number, string>> {
-  try {
-    const movie = (await tmdbJson('/genre/movie/list', {})) as { genres: { id: number; name: string }[] };
-    const tv = (await tmdbJson('/genre/tv/list', {})) as { genres: { id: number; name: string }[] };
-    const map: Record<number, string> = {};
-    for (const g of [...movie.genres, ...tv.genres]) map[g.id] = g.name;
-    return map;
-  } catch {
-    return {};
-  }
-}
-
 /** Ingesta mínima d'un resultat de discover (fase de descobriment). */
-function ingestDiscover(db: Database.Database, r: DiscoverResult, kind: 'movie' | 'series', opts: { hasCa: number; originalLanguage: string | null; genreMap: Record<number, string> }): void {
-  const genres = (r.genre_ids || []).map((g) => opts.genreMap[g]).filter(Boolean);
+function ingestDiscover(db: Database.Database, r: DiscoverResult, kind: 'movie' | 'series', opts: { hasCa: number; originalLanguage: string | null }): void {
+  const genres = (r.genre_ids || []).map((g) => GENRE_BY_ID[g]).filter(Boolean);
   const isAnime = genres.includes('Animació') && (kind === 'series' ? (r.origin_country || []).includes(JP) : false);
   dbq.upsertCatalogTitle(db, {
     tmdbId: r.id,
@@ -107,7 +129,7 @@ function ingestDiscover(db: Database.Database, r: DiscoverResult, kind: 'movie' 
  * Phase A: tots els originals en català (pel·lícules + sèries).
  * Descobriment paginat; es reprèn per la pàgina guardada a sync_state.
  */
-async function syncOriginals(db: Database.Database, genreMap: Record<number, string>): Promise<void> {
+async function syncOriginals(db: Database.Database): Promise<void> {
   for (const kind of ['movie', 'series'] as const) {
     const path = kind === 'movie' ? '/discover/movie' : '/discover/tv';
     const stateKey = `originals_${kind}_page`;
@@ -123,7 +145,7 @@ async function syncOriginals(db: Database.Database, genreMap: Record<number, str
       })) as { results: DiscoverResult[]; total_pages: number };
       totalPages = Math.min(500, d.total_pages || 1);
       for (const r of d.results || []) {
-        ingestDiscover(db, r, kind, { hasCa: 1, originalLanguage: 'ca', genreMap });
+        ingestDiscover(db, r, kind, { hasCa: 1, originalLanguage: 'ca' });
       }
       dbq.setSyncState(db, stateKey, String(page));
       await sleep(REQ_DELAY_MS);
@@ -150,7 +172,7 @@ async function syncDetails(db: Database.Database): Promise<void> {
         const d = (await tmdbJson(`/${kind}/${row.tmdb_id}`, {
           append_to_response: 'translations,watch/providers',
         })) as DetailsResult;
-        const genreList = (d.genres || []).map((g) => g.name);
+        const genreList = (d.genres || []).map((g) => GENRE_BY_ID[g.id] || g.name).filter(Boolean);
         const countries = [...(d.origin_country || []), ...(d.production_countries || []).map((c) => c.iso_3166_1)];
         const isAnime = genreList.includes('Animació') && countries.includes(JP) ? 1 : 0;
         const caTr = (d.translations?.translations || []).find((t) => t.iso_639_1 === 'ca');
@@ -194,8 +216,7 @@ export async function runCatalogSync(db: Database.Database): Promise<void> {
   syncRunning = true;
   dbq.setSyncState(db, 'sync_last_run', new Date().toISOString());
   try {
-    const genreMap = await genreNames();
-    await syncOriginals(db, genreMap);
+    await syncOriginals(db);
     await syncDetails(db);
     dbq.setSyncState(db, 'sync_last_ok', new Date().toISOString());
     // Fonts externes de "on veure-ho": un cop el catàleg TMDb és al dia.

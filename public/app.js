@@ -20,7 +20,7 @@ const GENRE_LABELS = {
   'Crim': 'Crim', 'Documental': 'Documental', 'Drama': 'Drama', 'Familiar': 'Familiar',
   'Fantasia': 'Fantasia', 'Història': 'Història', 'Terror': 'Terror', 'Música': 'Música',
   'Misteri': 'Misteri', 'Romàntic': 'Romàntic', 'Ciència-ficció': 'Ciència-ficció',
-  'Ciència-ficció i Fantasia': 'Ciència-ficció i Fantasia', 'Pel·lícula de televisió': 'Pel·lícula de televisió',
+  'Ciència-ficció i Fantasia': 'Ciència-ficció i fantasia', 'Ciència-ficció i fantasia': 'Ciència-ficció i fantasia', 'Pel·lícula de televisió': 'Pel·lícula de televisió',
   'Thriller': 'Thriller', 'Bélic': 'Bélic', 'Western': 'Western',
   'Acció i Aventura': 'Acció i Aventura', 'Infantil': 'Infantil', 'Notícies': 'Notícies',
   'Reality': 'Reality', 'Telenovel·la': 'Telenovel·la', 'Tertúlia': 'Tertúlia', 'Guerra i política': 'Guerra i política'
@@ -274,6 +274,12 @@ async function renderLibrary() {
       return;
     }
 
+    // Pel·lícules / sèries sense cerca: fileres agrupades per categoria
+    if ((state.section === 'pel·lícules' || state.section === 'sèries') && !state.search) {
+      await renderCategoryPage(state.section === 'pel·lícules' ? 'movie' : 'series', sectionTitle);
+      return;
+    }
+
     let data;
     if (state.section === 'cataleg' && !state.search) {
       // Inici: carreguem més títols per omplir fileres i hero
@@ -282,29 +288,127 @@ async function renderLibrary() {
       data = await api(`/api/titles?${buildQuery()}`);
     }
 
-    if (state.section === 'cataleg') {
-      // Catàleg: sense cerca → fileres de contingut; amb cerca → graella de resultats
-      if (state.search) {
-        content.innerHTML = `<h1 class="page-title">Resultats de la cerca</h1>`;
-        renderGrid(content, data.data);
-        renderPagination(content, data);
-      } else {
-        await renderHome(data.data);
-      }
-    } else if (state.search || state.type || state.genre || state.year) {
-      // Hi ha cerca/filtres actius: graella clàssica amb paginació
-      content.innerHTML = `<h1 class="page-title">${sectionTitle}</h1>`;
-      renderGrid(content, data.data);
-      renderPagination(content, data);
+    if (state.section === 'cataleg' && !state.search) {
+      await renderHome(data.data);
     } else {
-      content.innerHTML = `<h1 class="page-title">${sectionTitle}</h1>`;
-      renderGrid(content, data.data);
-      renderPagination(content, data);
+      // Cerca: graella amb scroll infinit (les pòsters carreguen en entrar a la vista)
+      content.innerHTML = `<h1 class="page-title">${state.search ? 'Resultats de la cerca' : sectionTitle}</h1>`;
+      setupInfiniteGrid(content, data);
     }
   } catch (e) {
     console.error(e);
     content.innerHTML = `<div class="empty">No s'ha pogut carregar el catàleg: ${escapeHtml(e.message)}</div>`;
   }
+}
+
+/** Pàgina de secció (Pel·lícules / Sèries) amb fileres per categoria. */
+async function renderCategoryPage(type, title) {
+  const content = $('#content');
+  content.innerHTML = `<h1 class="page-title">${title}</h1><div id="catRows"><div class="loading">Carregant categories…</div></div>`;
+  const container = $('#catRows');
+  const tType = type === 'movie' ? 'movie' : 'series';
+  const animeQ = showAnimeEnabled() ? '' : '&anime=0';
+
+  let genres = [];
+  try {
+    genres = await api(`/api/genres?type=${tType}`);
+  } catch { /* sense gèneres: només la filera de populars */ }
+
+  const rowsSpec = [
+    { label: 'Més populars', query: `type=${tType}&sort=popularity&limit=40${animeQ}` },
+    ...genres.map(g => ({
+      label: `${g.genre}`,
+      query: `type=${tType}&genre=${encodeURIComponent(g.genre)}&sort=popularity&limit=36${animeQ}`
+    }))
+  ];
+
+  // Carreguem cada filera i l'anem afegint a mesura que arriba
+  let added = 0;
+  for (const spec of rowsSpec) {
+    try {
+      const d = await api(`/api/titles?${spec.query}`);
+      if (d.data && d.data.length) {
+        container.insertAdjacentHTML('beforeend', rowSection(spec.label, d.data, `${d.total} títols`));
+        added++;
+      }
+    } catch { /* fila opcional: la saltem */ }
+  }
+  if (!added) {
+    container.innerHTML = '<div class="empty">No hi ha títols encara.</div>';
+    return;
+  }
+  wireRowArrows(content);
+}
+
+/** Bloc de filera horitzontal de pòsters (comptat amb arrows). */
+function rowSection(label, items, countLabel) {
+  return `
+    <section class="row">
+      <div class="row-head">
+        <h2 class="row-title">${escapeHtml(label)}</h2>
+        <div class="row-side">
+          ${countLabel ? `<span class="row-count">${escapeHtml(countLabel)}</span>` : ''}
+          <span class="row-arrows">
+            <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
+            <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
+          </span>
+        </div>
+      </div>
+      <div class="hscroll">${items.map(posterCard).join('')}</div>
+    </section>
+  `;
+}
+
+/** Activa les fletxes de totes les fileres del contenidor. */
+function wireRowArrows(root) {
+  root.querySelectorAll('.row-arrow').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const scroller = btn.closest('.row').querySelector('.hscroll');
+      if (!scroller) return;
+      const dir = Number(btn.dataset.dir);
+      const step = Math.max(220, scroller.clientWidth * 0.8);
+      scroller.scrollBy({ left: dir * step, behavior: 'smooth' });
+    });
+  });
+}
+
+/** Graella amb scroll infinit: afegeix pàgines quan l'usuari s'apropa al final. */
+function setupInfiniteGrid(content, firstPage) {
+  if (!firstPage.data.length) {
+    content.insertAdjacentHTML('beforeend', '<div class="empty">No hi ha títols amb aquests filtres.</div>');
+    return;
+  }
+  state.page = firstPage.page;
+  content.insertAdjacentHTML('beforeend', `<div class="grid">${firstPage.data.map(posterCard).join('')}</div>`);
+  if (firstPage.totalPages <= 1) return;
+
+  const sentinel = document.createElement('div');
+  sentinel.className = 'grid-sentinel';
+  sentinel.innerHTML = '<div class="loading">Carregant més títols…</div>';
+  content.appendChild(sentinel);
+
+  const observer = new IntersectionObserver(async (entries) => {
+    if (!entries[0].isIntersecting) return;
+    if (sentinel.dataset.busy || sentinel.dataset.done) return;
+    sentinel.dataset.busy = '1';
+    try {
+      const next = Number(state.page) + 1;
+      const d = await api(`/api/titles?${buildQuery({ page: next })}`);
+      state.page = next;
+      sentinel.insertAdjacentHTML('beforebegin', `<div class="grid">${d.data.map(posterCard).join('')}</div>`);
+      if (next >= d.totalPages || !d.data.length) {
+        sentinel.dataset.done = '1';
+        observer.disconnect();
+        sentinel.remove();
+      }
+    } catch {
+      sentinel.dataset.done = '1';
+    } finally {
+      delete sentinel.dataset.busy;
+    }
+  }, { rootMargin: '900px 0px' });
+  observer.observe(sentinel);
 }
 
 /** Agrupa els títols en fileres (per tipus) per a la vista Inici. */
@@ -488,16 +592,7 @@ async function renderHome(titles) {
   $('#heroDetails')?.addEventListener('click', (e) => renderDetail(e.currentTarget.dataset.id));
 
   // Fletxes de filera: mou el scroll horitzontal
-  content.querySelectorAll('.row-arrow').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const scroller = btn.closest('.row').querySelector('.hscroll');
-      if (!scroller) return;
-      const dir = Number(btn.dataset.dir);
-      const step = Math.max(220, scroller.clientWidth * 0.8);
-      scroller.scrollBy({ left: dir * step, behavior: 'smooth' });
-    });
-  });
+  wireRowArrows(content);
 
   const search = $('#searchInput');
   if (search) {
@@ -509,27 +604,7 @@ async function renderHome(titles) {
   }
 }
 
-function renderGrid(content, titles) {
-  if (!titles.length) {
-    content.innerHTML += `<div class="empty">No hi ha títols amb aquests filtres.</div>`;
-    return;
-  }
-  content.innerHTML += `<div class="grid">${titles.map(posterCard).join('')}</div>`;
-}
 
-function renderPagination(content, data) {
-  if (data.totalPages <= 1) return;
-  const div = document.createElement('div');
-  div.className = 'pagination';
-  div.innerHTML = `
-    <button id="prevPage" ${data.page <= 1 ? 'disabled' : ''}>${ICON_CHEV_L} Anterior</button>
-    <span>Pàgina ${data.page} de ${data.totalPages}</span>
-    <button id="nextPage" ${data.page >= data.totalPages ? 'disabled' : ''}>Següent ${ICON_CHEV_R}</button>
-  `;
-  content.appendChild(div);
-  $('#prevPage').onclick = () => { if (state.page > 1) { state.page--; renderLibrary(); } };
-  $('#nextPage').onclick = () => { if (state.page < data.totalPages) { state.page++; renderLibrary(); } };
-}
 
 async function renderContinueWatching() {
   const content = $('#content');

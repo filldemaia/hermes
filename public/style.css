@@ -351,7 +351,7 @@ body.on-home .nav-search { display: none; }
 }
 .btn-play:hover { background: var(--amber-bright); transform: translateY(-2px); box-shadow: 0 8px 28px var(--amber-glow); }
 .btn-play .play-tri-ic { display: inline-flex; }
-.btn-arrow .chev, .pagination button .chev { display: inline-block; vertical-align: -2px; }
+.btn-arrow .chev, .row-arrow .chev { display: inline-block; vertical-align: -2px; }
 .watch-ico, .win-ico { display: inline-flex; align-items: center; }
 .watch-btn svg, .win-ico svg { display: block; }
 .episode-num svg { vertical-align: -2px; }
@@ -576,12 +576,9 @@ body.on-home .nav-search { display: none; }
 }
 .grid .card { width: 100%; }
 
-/* Paginació */
-.pagination { display: flex; gap: 0.6rem; align-items: center; justify-content: center; margin-top: 2rem; }
-.pagination button { padding: 0.45rem 1rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
-.pagination button:not(:disabled):hover { border-color: var(--amber); color: var(--amber-bright); }
-.pagination button:disabled { opacity: 0.35; cursor: default; }
-.pagination span { color: var(--muted); font-size: 0.9rem; }
+/* Scroll infinit (sentinella de la graella) */
+.grid-sentinel { display: flex; justify-content: center; padding: 1.5rem 0 2.5rem; }
+.grid-sentinel .loading { padding: 0; }
 
 
 

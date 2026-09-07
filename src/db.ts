@@ -125,6 +125,56 @@ CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
   if (!cols.includes('password_hash')) {
     db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT');
   }
+
+  migrateGenresToCa(db);
+}
+
+/** Gèneres TMDb en anglès → català (TMDb no té traducció ca dels gèneres). */
+const GENRE_EN_TO_CA: Record<string, string> = {
+  'Action': 'Acció',
+  'Adventure': 'Aventura',
+  'Animation': 'Animació',
+  'Comedy': 'Comèdia',
+  'Crime': 'Crim',
+  'Documentary': 'Documental',
+  'Drama': 'Drama',
+  'Family': 'Familiar',
+  'Fantasy': 'Fantasia',
+  'History': 'Història',
+  'Horror': 'Terror',
+  'Music': 'Música',
+  'Mystery': 'Misteri',
+  'Romance': 'Romàntic',
+  'Science Fiction': 'Ciència-ficció',
+  'TV Movie': 'Pel·lícula de televisió',
+  'War': 'Bèl·lica',
+  'Action & Adventure': 'Acció i aventura',
+  'Kids': 'Infantil',
+  'News': 'Notícies',
+  'Reality': 'Realitat',
+  'Sci-Fi & Fantasy': 'Ciència-ficció i fantasia',
+  'Soap': 'Telenovel·la',
+  'Talk': 'Tertúlia',
+  'War & Politics': 'Guerra i política',
+};
+
+/** Converteix una vegada els gèneres guardats en anglès a català (idempotent). */
+function migrateGenresToCa(db: Database.Database): void {
+  const rows = db.prepare('SELECT id, genres FROM titles').all() as { id: string; genres: string }[];
+  const upd = db.prepare('UPDATE titles SET genres = ? WHERE id = ?');
+  for (const r of rows) {
+    let arr: unknown[];
+    try {
+      arr = JSON.parse(r.genres || '[]');
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(arr)) continue;
+    const mapped = arr.map((g) => (typeof g === 'string' ? GENRE_EN_TO_CA[g] || g : g));
+    if (JSON.stringify(mapped) !== JSON.stringify(arr)) {
+      upd.run(JSON.stringify(mapped), r.id);
+    }
+  }
 }
 
 export function tmdbRowId(type: 'movie' | 'series', tmdbId: number): string {
@@ -525,6 +575,29 @@ export function setPreferences(db: Database.Database, userId: string, data: Reco
     `INSERT INTO user_preferences (user_id, data, updated_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')`
   ).run(userId, JSON.stringify(data));
+}
+
+/** Gèneres disponibles amb recomptes, per a les fileres per categoria. */
+export function listGenres(db: Database.Database, type: string | undefined, minCount = 3, limit = 14): { genre: string; count: number }[] {
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (type === 'movie' || type === 'series') {
+    where.push("t.type = ?");
+    params.push(type);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const rows = db
+    .prepare(
+      `SELECT g.value AS genre, COUNT(*) AS count
+       FROM titles t, json_each(t.genres) g
+       ${whereSql}
+       GROUP BY g.value
+       HAVING COUNT(*) >= ?
+       ORDER BY count DESC, genre ASC
+       LIMIT ?`
+    )
+    .all(...params, minCount, limit) as { genre: string; count: number }[];
+  return rows;
 }
 
 // ── Estadístiques ───────────────────────────────────────────────────────────

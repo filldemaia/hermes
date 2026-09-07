@@ -466,6 +466,25 @@ test('GET /api/stats: comptes del catàleg', async () => {
   assert.equal(d.free, 1);
 });
 
+test('GET /api/genres: gèneres amb recompte per tipus', async () => {
+  const r = await fetch(`${base}/api/genres?type=movie&min=1`);
+  const d = await json(r);
+  assert.equal(r.status, 200);
+  assert.ok(Array.isArray(d));
+  assert.ok(d.length >= 3);
+  const drama = d.find((g: { genre: string }) => g.genre === 'Drama');
+  assert.ok(drama);
+  assert.equal(drama.count, 1); // només Film català (Acció/Ciència-ficció són de l'altre)
+});
+
+test('GET /api/titles?genre=: filtre per gènere funcional', async () => {
+  const r = await fetch(`${base}/api/titles?type=movie&genre=${encodeURIComponent('Acció')}`);
+  const d = await json(r);
+  assert.equal(r.status, 200);
+  assert.equal(d.total, 1);
+  assert.equal(d.data[0].tmdb_id, 1002);
+});
+
 test('Fallback API: 404 JSON', async () => {
   const r = await fetch(`${base}/api/inexistent`);
   assert.equal(r.status, 404);

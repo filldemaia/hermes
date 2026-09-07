@@ -191,6 +191,12 @@ app.get('/api/titles', (req, res) => {
   res.json(data);
 });
 
+app.get('/api/genres', (req, res) => {
+  const type = String(req.query.type || '').trim();
+  const min = Math.max(1, parseInt(String(req.query.min || '3'), 10) || 3);
+  res.json(dbq.listGenres(db, type || undefined, min));
+});
+
 app.get('/api/titles/:id', (req, res) => {
   const title = dbq.getTitle(db, req.params.id);
   if (!title) {
