@@ -33,6 +33,8 @@ function activeUser(req: Request): string | null {
 
 app.set('json spaces', 2);
 
+setupRemuxCleanup();
+
 // ── Lock de remux (àudio alternatiu del contingut lliure) ───────────────────
 
 const remuxInFlight = new Map<string, Promise<string>>();
@@ -43,6 +45,59 @@ function withRemuxLock(key: string, build: () => Promise<string>): Promise<strin
   const p = build().finally(() => remuxInFlight.delete(key));
   remuxInFlight.set(key, p);
   return p;
+}
+
+/** Neteja la cache de remux: fitxers de més de 30 dies + cap de 30 GB (els més vells fora). */
+function setupRemuxCleanup(intervalMs = 6 * 60 * 60 * 1000): void {
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const CAP = 30 * 1024 ** 3;
+  const run = () => {
+    const dir = env('REMUX_DIR', '/opt/hermes/data/remux');
+    if (!safeStat(dir)?.isDirectory()) return;
+    let live: { p: string; mtime: number; size: number }[] = [];
+    try {
+      live = fs
+        .readdirSync(dir)
+        .map((n) => {
+          const p = path.join(dir, n);
+          const st = safeStat(p);
+          if (!st?.isFile() || st.size <= 1024) return null;
+          return { p, mtime: st.mtimeMs, size: st.size };
+        })
+        .filter((e): e is { p: string; mtime: number; size: number } => e !== null);
+    } catch {
+      return;
+    }
+    const now = Date.now();
+    for (const e of live) {
+      if (now - e.mtime > THIRTY_DAYS) {
+        try {
+          fs.rmSync(e.p, { force: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    live = live.filter((e) => fs.existsSync(e.p));
+    let total = live.reduce((s, e) => s + e.size, 0);
+    if (total <= CAP) return;
+    live.sort((a, b) => a.mtime - b.mtime);
+    for (const e of live) {
+      if (total <= CAP) break;
+      try {
+        fs.rmSync(e.p, { force: true });
+        total -= e.size;
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+  try {
+    run();
+  } catch {
+    /* no és fatal */
+  }
+  setInterval(run, intervalMs).unref();
 }
 
 // ── Estàtics (frontend SPA) ─────────────────────────────────────────────────
@@ -245,69 +300,52 @@ function playableTitle(id: string): Record<string, unknown> | null {
   return safeStat(file) ? { ...t, file } : null;
 }
 
-app.get(
-  '/api/titles/:id/tracks',
-  asyncH(async (req, res) => {
-    const t = playableTitle(req.params.id);
-    if (!t) {
-      res.status(404).json({ error: 'Contingut no reproduïble' });
-      return;
-    }
-    try {
-      res.json(await ff.getTracks(String(t.file)));
-    } catch (e) {
-      res.status(500).json({ error: `No s'han pogut llegir les pistes: ${(e as Error).message}` });
-    }
-  })
-);
+async function handleTracks(req: Request, res: Response): Promise<void> {
+  const t = playableTitle(req.params.id);
+  if (!t) {
+    res.status(404).json({ error: 'Contingut no reproduïble' });
+    return;
+  }
+  try {
+    res.json(await ff.getTracks(String(t.file)));
+  } catch (e) {
+    res.status(500).json({ error: `No s'han pogut llegir les pistes: ${(e as Error).message}` });
+  }
+}
 
-app.get(
-  '/api/titles/:id/subtitles/embedded/:idx',
-  asyncH(async (req, res) => {
-    const t = playableTitle(req.params.id);
-    if (!t) {
-      res.status(404).json({ error: 'Contingut no reproduïble' });
+async function handleEmbeddedSubtitle(req: Request, res: Response): Promise<void> {
+  const t = playableTitle(req.params.id);
+  if (!t) {
+    res.status(404).json({ error: 'Contingut no reproduïble' });
+    return;
+  }
+  const idx = parseInt(req.params.idx, 10);
+  if (!Number.isInteger(idx)) {
+    res.status(400).json({ error: 'Índex invàlid' });
+    return;
+  }
+  try {
+    const tracks = await ff.getTracks(String(t.file));
+    const sub = (tracks.subtitles || []).find((s) => s.index === idx);
+    if (!sub) {
+      res.status(404).json({ error: 'Subtítol no trobat' });
       return;
     }
-    const idx = parseInt(req.params.idx, 10);
-    if (!Number.isInteger(idx)) {
-      res.status(400).json({ error: 'Índex invàlid' });
-      return;
-    }
-    try {
-      const tracks = await ff.getTracks(String(t.file));
-      const sub = (tracks.subtitles || []).find((s) => s.index === idx);
-      if (!sub) {
-        res.status(404).json({ error: 'Subtítol no trobat' });
-        return;
-      }
-      const vtt = await ff.extractEmbeddedSubtitleVtt(String(t.file), sub.mapPos);
-      res.set('Content-Type', 'text/vtt; charset=utf-8');
-      res.set('Cache-Control', 'no-store');
-      res.send(vtt);
-    } catch (e) {
-      res.status(500).json({ error: `Subtítol no disponible: ${(e as Error).message}` });
-    }
-  })
-);
+    const vtt = await ff.extractEmbeddedSubtitleVtt(String(t.file), sub.mapPos);
+    res.set('Content-Type', 'text/vtt; charset=utf-8');
+    res.set('Cache-Control', 'no-store');
+    res.send(vtt);
+  } catch (e) {
+    res.status(500).json({ error: `Subtítol no disponible: ${(e as Error).message}` });
+  }
+}
 
-// ── Àlies de compatibilitat amb el client (l'id d'episodi és l'id del títol) ──
+// ── Rutes de reproducció (àlies /api/episodes per compatibilitat client) ────
 
-app.get(
-  '/api/episodes/:id/tracks',
-  asyncH(async (req, res) => {
-    const t = playableTitle(req.params.id);
-    if (!t) {
-      res.status(404).json({ error: 'Contingut no reproduïble' });
-      return;
-    }
-    try {
-      res.json(await ff.getTracks(String(t.file)));
-    } catch (e) {
-      res.status(500).json({ error: `No s'han pogut llegir les pistes: ${(e as Error).message}` });
-    }
-  })
-);
+app.get('/api/titles/:id/tracks', asyncH(handleTracks));
+app.get('/api/episodes/:id/tracks', asyncH(handleTracks));
+app.get('/api/titles/:id/subtitles/embedded/:idx', asyncH(handleEmbeddedSubtitle));
+app.get('/api/episodes/:id/subtitles/embedded/:idx', asyncH(handleEmbeddedSubtitle));
 
 app.post('/api/episodes/:id/prefetch', (req, res) => {
   const t = playableTitle(req.params.id);
@@ -340,37 +378,7 @@ app.post('/api/episodes/:id/prefetch', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get(
-  '/api/episodes/:id/subtitles/embedded/:idx',
-  asyncH(async (req, res) => {
-    const t = playableTitle(req.params.id);
-    if (!t) {
-      res.status(404).json({ error: 'Contingut no reproduïble' });
-      return;
-    }
-    const idx = parseInt(req.params.idx, 10);
-    if (!Number.isInteger(idx)) {
-      res.status(400).json({ error: 'Índex invàlid' });
-      return;
-    }
-    try {
-      const tracks = await ff.getTracks(String(t.file));
-      const sub = (tracks.subtitles || []).find((s) => s.index === idx);
-      if (!sub) {
-        res.status(404).json({ error: 'Subtítol no trobat' });
-        return;
-      }
-      const vtt = await ff.extractEmbeddedSubtitleVtt(String(t.file), sub.mapPos);
-      res.set('Content-Type', 'text/vtt; charset=utf-8');
-      res.set('Cache-Control', 'no-store');
-      res.send(vtt);
-    } catch (e) {
-      res.status(500).json({ error: `Subtítol no disponible: ${(e as Error).message}` });
-    }
-  })
-);
-
-// ── Fallback API ────────────────────────────────────────────────────────────
+// ── Streaming ───────────────────────────────────────────────────────────────
 
 function streamFileWithRange(res: Response, file: string, mime: string): void {
   const stat = fs.statSync(file);

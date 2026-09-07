@@ -6,7 +6,6 @@ const BASE = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p';
 const REQ_DELAY_MS = 120; // ~8 peticions/s: lluny del límit de TMDb
 
-const ANIMATION_GENRE_ID = 16;
 const JP = 'JP';
 
 interface DiscoverResult {
@@ -79,9 +78,7 @@ async function genreNames(): Promise<Record<number, string>> {
   }
 }
 
-// FIX: genreMap cal passar-lo explícitament a ingestDiscover (ja és un paràmetre)
-
-/** Ingesta mínima d'un resultat de discover (Phase A/B). */
+/** Ingesta mínima d'un resultat de discover (fase de descobriment). */
 function ingestDiscover(db: Database.Database, r: DiscoverResult, kind: 'movie' | 'series', opts: { hasCa: number; originalLanguage: string | null; genreMap: Record<number, string> }): void {
   const genres = (r.genre_ids || []).map((g) => opts.genreMap[g]).filter(Boolean);
   const isAnime = genres.includes('Animació') && (kind === 'series' ? (r.origin_country || []).includes(JP) : false);
@@ -133,53 +130,16 @@ async function syncOriginals(db: Database.Database, genreMap: Record<number, str
 }
 
 /**
- * Phase B: contingut popular doblat/subtitulat en català.
- * Recorrem el catàleg popular i preguntem per traduccions al català.
- * Es reprèn per pàgina; cada execució diària aprofundeix més.
- */
-async function syncPopularDubbed(db: Database.Database, genreMap: Record<number, string>): Promise<void> {
-  const MAX_PAGES = Number(env('SYNC_POPULAR_PAGES', '150'));
-  for (const kind of ['movie', 'series'] as const) {
-    const path = kind === 'movie' ? '/discover/movie' : '/discover/tv';
-    const stateKey = `popular_${kind}_page`;
-    let page = Number(dbq.getSyncState(db, stateKey) || '1') || 1;
-    while (page <= MAX_PAGES) {
-      const d = (await tmdbJson(path, { sort_by: 'popularity.desc', page: String(page) })) as { results: DiscoverResult[] };
-      for (const r of d.results || []) {
-        if (dbq.titleExists(db, kind, r.id)) {
-          dbq.markHasCa(db, kind, r.id); // ja el tenim: provem de marcar-lo (barat)
-          continue;
-        }
-        // Nou títol popular: només l'incorporem si té traducció catalana.
-        let hasCa = 0;
-        try {
-          const tr = (await tmdbJson(`/${kind}/${r.id}/translations`, {})) as { translations?: { iso_639_1: string }[] };
-          hasCa = (tr.translations || []).some((t) => t.iso_639_1 === 'ca') ? 1 : 0;
-        } catch {
-          /* xarxa: ho tornarem a provar demà */
-        }
-        if (hasCa) {
-          ingestDiscover(db, r, kind, { hasCa: 1, originalLanguage: null, genreMap });
-        }
-        await sleep(REQ_DELAY_MS);
-      }
-      dbq.setSyncState(db, stateKey, String(page));
-      page++;
-      await sleep(REQ_DELAY_MS);
-    }
-    dbq.setSyncState(db, stateKey, 'done');
-  }
-}
-
-/**
- * Phase C: enriquiment (1 petició/títol amb append_to_response).
+ * Enriquiment (1 petició/títol amb append_to_response).
  * Afegeix: backdrop complet, gèneres oficials, país d'origen (anime),
  * traducció catalana del títol/sinopsi i providers de la regió ES.
+ * Els títols que fallen queden pendents per al proper cicle diari.
  */
 async function syncDetails(db: Database.Database): Promise<void> {
   const BATCH = 500;
+  const failed = new Set<string>();
   for (;;) {
-    const pending = dbq.pendingDetails(db, BATCH);
+    const pending = dbq.pendingDetails(db, BATCH).filter((r) => !failed.has(r.id));
     if (!pending.length) break;
     for (const row of pending) {
       const kind = row.type === 'series' ? 'tv' : 'movie';
@@ -213,7 +173,9 @@ async function syncDetails(db: Database.Database): Promise<void> {
           detailsSynced: 1,
         });
       } catch {
-        /* el deixem pendent per al proper cicle */
+        // xarxa/TMDb caigut: el marquem com a fallit en aquesta execució per no
+        // reintentar-lo en bucle; el proper cicle diari ho tornarà a provar.
+        failed.add(row.id);
       }
       await sleep(REQ_DELAY_MS);
     }
@@ -231,7 +193,6 @@ export async function runCatalogSync(db: Database.Database): Promise<void> {
   try {
     const genreMap = await genreNames();
     await syncOriginals(db, genreMap);
-    await syncPopularDubbed(db, genreMap);
     await syncDetails(db);
     dbq.setSyncState(db, 'sync_last_ok', new Date().toISOString());
   } catch (e) {
@@ -260,7 +221,5 @@ export function syncStatus(db: Database.Database): Record<string, unknown> {
     pendingDetails: dbq.countPendingDetails(db),
     originalsMoviePage: dbq.getSyncState(db, 'originals_movie_page'),
     originalsSeriesPage: dbq.getSyncState(db, 'originals_series_page'),
-    popularMoviePage: dbq.getSyncState(db, 'popular_movie_page'),
-    popularSeriesPage: dbq.getSyncState(db, 'popular_series_page'),
   };
 }

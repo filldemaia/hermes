@@ -42,7 +42,3 @@ export function srtToVtt(text: string): string {
   return out.join('\n') + '\n';
 }
 
-/** Obté l'extensió de fitxer (sense punt). */
-export function extOf(name: string): string {
-  return String(name.split('.').pop() || '').toLowerCase();
-}

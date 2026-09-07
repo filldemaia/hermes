@@ -10,7 +10,7 @@
 # l'aplicació només els llegeix.
 
 [Unit]
-Description=Hermes — Plataforma de streaming en català (API + scanner + metadades)
+Description=Hermes — Plataforma de streaming en català (catàleg TMDb + reproducció)
 After=network.target
 Wants=network-online.target
 

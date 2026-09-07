@@ -196,15 +196,6 @@ export function upsertCatalogTitle(db: Database.Database, t: CatalogUpsert): voi
   );
 }
 
-/** Marca l'existència de traducció catalana per a títols ja presents. */
-export function markHasCa(db: Database.Database, type: 'movie' | 'series', tmdbId: number): void {
-  db.prepare('UPDATE titles SET has_ca = 1, updated_at = datetime(\'now\') WHERE id = ?').run(tmdbRowId(type, tmdbId));
-}
-
-export function titleExists(db: Database.Database, type: 'movie' | 'series', tmdbId: number): boolean {
-  return !!db.prepare('SELECT 1 FROM titles WHERE id = ?').get(tmdbRowId(type, tmdbId));
-}
-
 /** Proper lot de títols pendent d'enriquir amb detalls (Phase C). */
 export function pendingDetails(db: Database.Database, limit: number): { id: string; tmdb_id: number; type: string }[] {
   return db
@@ -443,17 +434,9 @@ export function libraryStats(db: Database.Database): Record<string, number> {
     series: one("SELECT COUNT(*) AS c FROM titles WHERE type='series'"),
     anime: one('SELECT COUNT(*) AS c FROM titles WHERE is_anime = 1'),
     originalsCa: one("SELECT COUNT(*) AS c FROM titles WHERE original_language = 'ca'"),
-    dubbedCa: one("SELECT COUNT(*) AS c FROM titles WHERE original_language != 'ca' AND has_ca = 1"),
     free: one('SELECT COUNT(*) AS c FROM titles WHERE is_free = 1'),
     users: one('SELECT COUNT(*) AS c FROM users'),
   };
-}
-
-/** Marca un títol com a contingut lliure amb fitxer local (càrrega manual/admin). */
-export function setFreeContent(db: Database.Database, titleId: string, filePath: string | null): void {
-  db.prepare(
-    `UPDATE titles SET is_free = ?, file_path = ?, updated_at = datetime('now') WHERE id = ?`
-  ).run(filePath ? 1 : 0, filePath, titleId);
 }
 
 export function ensureDataDir(): string {

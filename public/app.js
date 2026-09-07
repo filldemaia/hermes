@@ -105,8 +105,6 @@ const ICON_HEART_FILL = '<svg class="heart" width="16" height="16" viewBox="0 0 
 const ICON_HEART_EMPTY = '<svg class="heart" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
 const ICON_PLAY_SMALL = '<span class="play-tri-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="7,4 20,12 7,20"/></svg></span>';
 const ICON_POSTER_PLACEHOLDER = '<svg class="poster-ph" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L7 20"/></svg>';
-const ICON_BLOCKED = '<svg class="blocked" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="5" y1="5" x2="19" y2="19"/></svg>';
-const ICON_WARN = '<svg class="warn" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 const ICON_CHEV_L = '<svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"/></svg>';
 const ICON_CHEV_R = '<svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9,18 15,12 9,6"/></svg>';
 
@@ -238,7 +236,13 @@ async function renderLibrary() {
       return;
     }
 
-    const data = await api(`/api/titles?${buildQuery()}`);
+    let data;
+    if (state.section === 'cataleg' && !state.search) {
+      // Inici: carreguem més títols per omplir fileres i hero
+      data = await api(`/api/titles?${buildQuery({ limit: 120, sort: 'popularity' })}`);
+    } else {
+      data = await api(`/api/titles?${buildQuery()}`);
+    }
 
     if (state.section === 'cataleg') {
       // Catàleg: sense cerca → fileres de contingut; amb cerca → graella de resultats
