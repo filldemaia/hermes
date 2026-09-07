@@ -1,0 +1,62 @@
+# Hermes — unit systemd per a desplegament de producció
+# Procés directe al host (alternativa a Docker).
+#
+# Instal·lació:
+#   sudo cp deploy/hermes.service /etc/systemd/system/hermes.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now hermes
+#
+# Els directoris de mitjans es muntaran en read-only si cal (RNF-06); per defecte
+# l'aplicació només els llegeix.
+
+[Unit]
+Description=Hermes — Plataforma de streaming en català (API + scanner + metadades)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hermes
+Group=hermes
+WorkingDirectory=/opt/hermes
+
+# Carrega les variables d'entorn (clau TMDb, etc.)
+EnvironmentFile=/opt/hermes/.env
+
+# Execució de producció (compilat a dist/)
+ExecStart=/usr/bin/node dist/index.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# Accés SOLS de lectura al contingut (RNF-06). Protecció addicional:
+# l'aplicació no ha de poder escriure on no cal.
+# (Es llisten amb '-' al davant perquè systemd no falli si alguna ruta no
+# existeix en aquest host, p.ex. /srv/media/series.)
+ReadOnlyPaths=-/srv/media/movies -/srv/media/series -/srv/media/tv -/srv/media/anime
+
+# Sistema de fitxers d'arrel READ-ONLY excepte les rutes d'escriptura explícites:
+# la DB. Protegeix en front d'escriptures accidentals a qualsevol lloc del sistema.
+ProtectSystem=strict
+
+# Directori de dades (BD + cache) — únic estat persistent generat per l'app
+ReadWritePaths=/opt/hermes/data
+
+# Hardenització best-practice (sense cap capabilitat privilegiada)
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryDenyWriteExecute=no
+
+[Install]
+WantedBy=multi-user.target
