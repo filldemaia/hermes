@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes — Streaming en català</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0b0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hermes">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=26">
+  <link rel="icon" href="/favicon.ico?v=18" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=18">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=18">
+  <link rel="icon" type="image/png" href="/icon-192.png?v=26">
+  <link rel="stylesheet" href="/style.css?v=35">
+</head>
+<body>
+
+  <!-- ── Barra superior ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <button class="brand-link" data-section="inici" id="brandBtn">
+        <img class="caduceus" src="/assets/caduceus.svg?v=29" alt="" aria-hidden="true">
+        <span class="logo">HERMES</span>
+        <img class="caduceus caduceus-trailing" src="/assets/caduceus.svg?v=29" alt="" aria-hidden="true">
+      </button>
+    </div>
+
+    <nav class="sections" id="sections">
+      <button data-section="pel·lícules" class="section-link">Pel·lícules</button>
+      <button data-section="sèries" class="section-link">Sèries</button>
+      <button data-section="anime" class="section-link">Anime</button>
+      <button data-section="meva-llista" class="section-link">La meva llista</button>
+    </nav>
+
+    <div class="nav-search" id="navSearch">
+      <input type="search" id="navbarSearch" class="nav-search-input" placeholder="Cerca per títol..." autocomplete="off">
+    </div>
+
+    <div class="top-actions">
+      <div class="guest-menu" id="guestMenu">
+        <div class="guest-trigger-wrap">
+          <button id="guestBtn" class="btn-ghost-nav" title="Accés">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Entra</span>
+          </button>
+          <div class="guest-dropdown" id="guestDropdown" hidden>
+            <button class="dropdown-item" id="guestLogin">Inicia sessió</button>
+            <button class="dropdown-item" id="guestSignup">Registra't</button>
+          </div>
+        </div>
+      </div>
+      <div class="account-menu" id="accountMenu" hidden>
+        <div class="account-trigger-wrap">
+          <button id="profileBtn" class="btn-profile" title="El meu compte">
+            <span class="avatar" id="avatarLetter">?</span>
+            <span class="avatar-name" id="profileName">Compte</span>
+            <span class="avatar-caret">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
+            </span>
+          </button>
+          <div class="account-dropdown" id="accountDropdown" hidden>
+            <button id="logoutBtn" class="dropdown-item">Tancar sessió</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contingut ───────────────────────────────────────────────────── -->
+  <main id="app" class="app">
+    <div id="content"></div>
+  </main>
+
+  <!-- ── Barra de navegació inferior (mòbil, tipus app) ─────────────── -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="Navegació principal">
+    <button class="section-link bottom-link" data-section="cataleg" aria-label="Catàleg">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Catàleg</span>
+    </button>
+    <button class="section-link bottom-link" data-section="pel·lícules" aria-label="Pel·lícules">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <span>Pel·lícules</span>
+    </button>
+    <button class="section-link bottom-link" data-section="sèries" aria-label="Sèries">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <span>Sèries</span>
+    </button>
+    <button class="bottom-link bottom-search" id="bottomSearchBtn" aria-label="Cerca">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Cerca</span>
+    </button>
+    <button class="section-link bottom-link" data-section="meva-llista" aria-label="La meva llista">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Llista</span>
+    </button>
+    <button class="bottom-link bottom-user" id="bottomUserBtn" aria-label="Usuari">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="bottomUserLabel">Usuari</span>
+    </button>
+  </nav>
+
+  <!-- ── Modal de inici sessió / registre ──────────────────────────── -->
+  <div id="authOverlay" class="auth-overlay hidden">
+    <div class="auth-box">
+      <div class="auth-head">
+        <span class="auth-logo"><img class="caduceus" src="/assets/caduceus.svg?v=29" alt="" aria-hidden="true">HERMES</span>
+        <h2 id="authTitle">Inicia sessió</h2>
+      </div>
+      <div class="auth-body">
+        <label class="auth-field">
+          <span>Nom d'usuari</span>
+          <input type="text" id="authName" autocomplete="username" maxlength="50">
+        </label>
+        <label class="auth-field">
+          <span>Contrasenya</span>
+          <input type="password" id="authPassword" autocomplete="current-password">
+        </label>
+        <p id="authError" class="auth-error"></p>
+        <button id="authSubmit" class="btn btn-full">Inicia sessió</button>
+        <p class="auth-switch">
+          No tens compte? <button type="button" id="authSwitch">Registra't</button>
+        </p>
+      </div>
+      <button class="auth-close" id="authClose" title="Tanca">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Reproductor ─────────────────────────────────────────────── -->
+  <div id="playerOverlay" class="player-overlay hidden">
+    <div class="player-stage" id="playerStage">
+      <video id="videoElement" preload="metadata" playsinline></video>
+      <div class="player-buffering hidden" id="playerBuffering"></div>
+
+      <!-- Capçalera: títol + tancar (overlay sobre el vídeo) -->
+      <div class="player-header" id="playerHeader">
+        <span id="playerTitle" class="player-title"></span>
+        <button id="closePlayer" class="btn-close" title="Tanca" aria-label="Tanca el reproductor">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Barra de controls personalitzada -->
+      <div class="player-controls" id="playerControls">
+        <div class="player-progress">
+          <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1" aria-label="Posició de reproducció">
+        </div>
+        <div class="player-buttons">
+          <button class="ctrl-btn ctrl-play" id="btnPlay" title="Reprodueix/Pausa (K)" aria-label="Reprodueix/Pausa">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="7,4 20,12 7,20"/></svg>
+          </button>
+          <button class="ctrl-btn" id="btnBack10" title="Retrocedir 10 s (J)" aria-label="Retrocedir 10 segons">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11,19 2,12 11,5"/><polygon points="22,19 13,12 22,5"/></svg>
+          </button>
+          <button class="ctrl-btn" id="btnFwd10" title="Avançar 10 s (L)" aria-label="Avançar 10 segons">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,19 22,12 13,5"/><polygon points="2,19 11,12 2,5"/></svg>
+          </button>
+          <span class="ctrl-time" id="ctrlTime">0:00 / 0:00</span>
+
+          <span class="ctrl-spacer"></span>
+
+          <span class="volume-wrap" id="volumeWrap">
+            <button class="ctrl-btn" id="btnVolume" title="Volum (M)" aria-label="Volum">
+              <svg id="iconVolume" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <div class="volume-pop" id="volumePop">
+              <input type="range" id="volumeSlider" min="0" max="100" value="100" step="1" aria-label="Nivell de volum">
+            </div>
+          </span>
+
+          <button class="ctrl-btn" id="btnAudio" title="Pista d'àudio" aria-label="Pista d'àudio">
+            <svg id="iconAudio" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </button>
+          <button class="ctrl-btn" id="btnSubs" title="Subtítols" aria-label="Subtítols"><span class="cc-label">CC</span></button>
+          <button class="ctrl-btn" id="btnSpeed" title="Velocitat" aria-label="Velocitat"><span id="speedLabel">1×</span></button>
+          <button class="ctrl-btn" id="btnEpisodes" title="Episodis" aria-label="Episodis" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button class="ctrl-btn" id="btnFullscreen" title="Pantalla completa (F)" aria-label="Pantalla completa">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Menús contextuals -->
+      <div class="player-menu hidden" id="menuAudio"></div>
+      <div class="player-menu hidden" id="menuSubs"></div>
+      <div class="player-menu hidden" id="menuSpeed"></div>
+      <div class="player-menu hidden" id="menuEpisodes"></div>
+
+      <!-- Indicador de rewind/forward -->
+      <div class="player-seek-hint hidden" id="seekHint"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/app.js?v=34"></script>
+</body>
+</html>
