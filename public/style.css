@@ -207,14 +207,29 @@ body.on-home .nav-search { display: none; }
 .welcome-screen {
   min-height: 100dvh;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  align-items: center;
   padding: 1rem;
 }
-.welcome-screen .welcome-inner { margin: 0 auto; }
-.welcome-screen .welcome-logo { font-size: clamp(2.4rem, 6vw, 4rem); margin-bottom: 1.4rem; }
-/* Bloc central: amunt (marge per sota, mai es talla) amb aire entre elements */
-.welcome-screen .welcome-inner { margin-bottom: 9vh; }
-.welcome-screen .welcome-tagline { margin: 0 auto 2.8rem; font-size: clamp(1rem, 2vw, 1.2rem); }
+/* Distribució vertical: el bloc central omple l'espai entre la part de
+   dalt i el peu legal, amb els elements repartits i aire de debò */
+.welcome-screen .welcome-inner {
+  margin: 0 auto;
+  width: 100%; max-width: 640px;
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding-bottom: 4vh;
+}
+.welcome-screen .welcome-logo {
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  margin-bottom: clamp(1.6rem, 5vh, 3.6rem);
+}
+.welcome-screen .welcome-tagline {
+  margin: 0 auto clamp(2.2rem, 6vh, 4rem);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+.welcome-screen .search { margin-bottom: clamp(2.6rem, 7vh, 4.5rem); }
+.welcome-screen .btn-reveal { margin-bottom: 2vh; }
 /* Cerca en format línia (subratllat), sense bombolla */
 .welcome-screen .search { max-width: 540px; }
 .welcome-screen .search input {
@@ -1019,7 +1034,7 @@ body.on-home .nav-search { display: none; }
     min-height: 100dvh;
     padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
   }
-  .welcome-screen .welcome-inner { margin-bottom: 3vh; }
+  /* (la distribució és responsiva; no cal res especial al mòbil) */
   .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
   .detail { flex-direction: column; }
   .detail-poster { width: 100%; max-width: 220px; }
