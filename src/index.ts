@@ -288,6 +288,85 @@ app.put('/api/me/preferences', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Compte actiu (perfil, foto, contrasenya) ────────────────────────────────
+
+const PHOTO_MAX_BYTES = 300 * 1024;
+const PHOTO_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+
+app.get('/api/me', (req, res) => {
+  const userId = activeUser(req);
+  res.json(userId ? auth.getMe(db, userId) : null);
+});
+
+app.patch('/api/me', (req, res) => {
+  const userId = activeUser(req);
+  if (!userId) {
+    res.status(401).json({ error: 'Cal una sessió' });
+    return;
+  }
+  const b = req.body || {};
+  const update: { displayName?: string; password?: string | null } = {};
+  if (b.displayName != null) {
+    const name = String(b.displayName).trim();
+    const current = auth.getMe(db, userId);
+    // Només valdem el format si el nom canvia (els comptes antics poden
+    // tenir noms amb espais: no els bloquegem per editar la resta).
+    if (name !== (current?.display_name || '') && !USERNAME_RE.test(name)) {
+      res.status(400).json({ error: 'El nom ha de tenir 3-20 caràcters: lletres, números, punt, guió o guió baix' });
+      return;
+    }
+    update.displayName = name;
+  }
+  if (b.password != null && b.password !== '') {
+    const pwd = String(b.password);
+    if (pwd.length < 6) {
+      res.status(400).json({ error: 'La contrasenya ha de tenir com a mínim 6 caràcters' });
+      return;
+    }
+    update.password = pwd;
+  }
+  const r = auth.updateMe(db, userId, update);
+  if (!r.ok) {
+    res.status(r.error === 'Perfil no trobat' ? 404 : 409).json({ error: r.error });
+    return;
+  }
+  res.json(auth.getMe(db, userId));
+});
+
+app.put('/api/me/avatar', (req, res) => {
+  const userId = activeUser(req);
+  if (!userId) {
+    res.status(401).json({ error: 'Cal una sessió' });
+    return;
+  }
+  const photo = String((req.body || {}).photo || '');
+  if (!photo) {
+    auth.setPhoto(db, userId, null);
+    res.json({ ok: true, photo: null });
+    return;
+  }
+  if (!PHOTO_RE.test(photo)) {
+    res.status(400).json({ error: 'Format de foto no suportat (png, jpeg o webp)' });
+    return;
+  }
+  if (photo.length > PHOTO_MAX_BYTES) {
+    res.status(400).json({ error: 'La foto és massa gran (màxim ~300 KB)' });
+    return;
+  }
+  auth.setPhoto(db, userId, photo);
+  res.json({ ok: true, photo });
+});
+
+app.delete('/api/me/avatar', (req, res) => {
+  const userId = activeUser(req);
+  if (!userId) {
+    res.status(401).json({ error: 'Cal una sessió' });
+    return;
+  }
+  auth.setPhoto(db, userId, null);
+  res.json({ ok: true, photo: null });
+});
+
 // ── Perfils i autenticació ──────────────────────────────────────────────────
 
 app.get('/api/profiles', (req, res) => {

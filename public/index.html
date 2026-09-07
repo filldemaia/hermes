@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=19">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=19">
   <link rel="icon" type="image/png" href="/icon-192.png?v=27">
-  <link rel="stylesheet" href="/style.css?v=43">
+  <link rel="stylesheet" href="/style.css?v=44">
 </head>
 <body>
 
@@ -76,35 +76,77 @@
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
       <span>Pel·lícules</span>
     </button>
-    <button class="section-link bottom-link" data-section="sèries" aria-label="Sèries">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-      <span>Sèries</span>
-    </button>
     <button class="bottom-link bottom-search" id="bottomSearchBtn" aria-label="Cerca">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <span>Cerca</span>
     </button>
-    <button class="section-link bottom-link" data-section="meva-llista" aria-label="La meva llista">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      <span>Llista</span>
+    <button class="section-link bottom-link" data-section="sèries" aria-label="Sèries">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <span>Sèries</span>
     </button>
     <button class="bottom-link bottom-user" id="bottomUserBtn" aria-label="Usuari">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="bottom-avatar" id="bottomAvatar"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
       <span id="bottomUserLabel">Usuari</span>
     </button>
   </nav>
 
-  <!-- ── Desplegables de sessió (independents de la topbar: visibles també a mòbil) ── -->
+  <!-- ── Desplegable de convidat (independent de la topbar: visible també a mòbil) ── -->
   <div class="guest-dropdown" id="guestDropdown" hidden>
     <button class="dropdown-item" id="guestLogin">Inicia sessió</button>
     <button class="dropdown-item" id="guestSignup">Registra't</button>
   </div>
-  <div class="account-dropdown" id="accountDropdown" hidden>
-    <button id="animeToggle" class="dropdown-item dropdown-toggle">
-      <span>Animes</span>
-      <span class="toggle-state" id="animeToggleState">Activats</span>
-    </button>
-    <button id="logoutBtn" class="dropdown-item">Tancar sessió</button>
+
+  <!-- ── Modal de configuració del compte ──────────────────────────── -->
+  <div id="settingsOverlay" class="auth-overlay hidden">
+    <div class="auth-box settings-box">
+      <div class="auth-head">
+        <span class="auth-logo">CONFIGURACIÓ</span>
+      </div>
+      <div class="auth-body">
+        <div class="settings-avatar-row">
+          <span class="settings-avatar" id="settingsAvatar">?</span>
+          <div class="settings-avatar-actions">
+            <label class="btn btn-mini settings-photo-btn">
+              Puja una foto
+              <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" hidden>
+            </label>
+            <button type="button" class="btn btn-mini" id="photoRemove" hidden>Elimina la foto</button>
+          </div>
+        </div>
+        <label class="auth-field">
+          <span>Nom d'usuari</span>
+          <input type="text" id="settingsName" maxlength="20" autocomplete="username" spellcheck="false">
+          <small class="auth-hint" id="settingsNameHint" aria-live="polite"></small>
+        </label>
+        <label class="auth-field">
+          <span>Contrasenya nova (opcional)</span>
+          <span class="password-wrap">
+            <input type="password" id="settingsPassword" autocomplete="new-password">
+            <button type="button" class="password-eye" id="settingsEye" title="Mostra/amaga la contrasenya" tabindex="-1">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </span>
+          <small class="auth-hint" id="settingsPasswordHint" aria-live="polite"></small>
+        </label>
+        <label class="auth-field" id="settingsConfirmField">
+          <span>Confirma la contrasenya</span>
+          <input type="password" id="settingsPassword2" autocomplete="new-password">
+          <small class="auth-hint" id="settingsConfirmHint" aria-live="polite"></small>
+        </label>
+        <p id="settingsError" class="auth-error"></p>
+        <button id="settingsSave" class="btn btn-full">Desa els canvis</button>
+        <div class="settings-row">
+          <button type="button" id="settingsAnimeToggle" class="dropdown-item dropdown-toggle">
+            <span>Contingut d'anime</span>
+            <span class="toggle-state" id="settingsAnimeState">Activat</span>
+          </button>
+          <button type="button" id="settingsLogout" class="dropdown-item settings-logout">Tancar la sessió</button>
+        </div>
+      </div>
+      <button class="auth-close" id="settingsClose" title="Tanca">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ── Modal de inici sessió / registre ──────────────────────────── -->
@@ -221,6 +263,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/app.js?v=41"></script>
+  <script src="/app.js?v=42"></script>
 </body>
 </html>

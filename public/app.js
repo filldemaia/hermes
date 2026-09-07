@@ -239,8 +239,8 @@ function setShowAnime(on) {
   renderLibrary();
 }
 function updateAnimeToggleUI() {
-  const el = $('#animeToggleState');
-  if (el) el.textContent = showAnimeEnabled() ? 'Activats' : 'Desactivats';
+  const el = $('#settingsAnimeState');
+  if (el) el.textContent = showAnimeEnabled() ? 'Activat' : 'Desactivat';
 }
 
 /** Sincronitza la preferència local amb la del compte en iniciar sessió. */
@@ -272,6 +272,10 @@ async function renderLibrary() {
   try {
     if (state.section === 'meva-llista') {
       await renderMyList();
+      return;
+    }
+    if (state.section === 'usuari') {
+      await renderUserPage();
       return;
     }
     if (state.section === 'continuar') {
@@ -309,9 +313,8 @@ async function renderLibrary() {
           if (e.key !== 'Enter') return;
           e.preventDefault();
           const q = inline.value.trim();
-          if (q) state.search = q;
+          if (q) { state.search = q; renderLibrary(); }
           else { state.search = ''; setSection('cataleg'); return; }
-          renderLibrary();
         });
       }
     }
@@ -348,7 +351,8 @@ async function renderCategoryPage(type, title) {
     try {
       const d = await api(`/api/titles?${spec.query}`);
       if (d.data && d.data.length) {
-        container.insertAdjacentHTML('beforeend', rowSection(spec.label, d.data, `${d.total} títols`));
+        if (!added) container.innerHTML = ''; // fora el "Carregant..."
+        container.insertAdjacentHTML('beforeend', rowSection(spec.label, d.data));
         added++;
       }
     } catch { /* fila opcional: la saltem */ }
@@ -360,14 +364,13 @@ async function renderCategoryPage(type, title) {
   wireRowArrows(content);
 }
 
-/** Bloc de filera horitzontal de pòsters (comptat amb arrows). */
-function rowSection(label, items, countLabel) {
+/** Bloc de filera horitzontal de pòsters (amb fletxes de desplaçament). */
+function rowSection(label, items) {
   return `
     <section class="row">
       <div class="row-head">
         <h2 class="row-title">${escapeHtml(label)}</h2>
         <div class="row-side">
-          ${countLabel ? `<span class="row-count">${escapeHtml(countLabel)}</span>` : ''}
           <span class="row-arrows">
             <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
             <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
@@ -465,7 +468,7 @@ function renderWelcome() {
   if (search) {
     const submit = () => {
       const q = search.value.trim();
-      if (q) { state.search = q; setSection('cataleg'); }
+      if (q) { state.search = q; setSection('cataleg', { keepSearch: true }); }
     };
     if (isMobile()) {
       // Mòbil: la cerca només s'envia quan l'usuari la confirma (Enter)
@@ -478,7 +481,7 @@ function renderWelcome() {
         clearTimeout(t);
         t = setTimeout(() => {
           const q = search.value.trim();
-          if (q) { state.search = q; setSection('cataleg'); }
+          if (q) { state.search = q; setSection('cataleg', { keepSearch: true }); }
         }, 350);
       });
     }
@@ -499,7 +502,6 @@ async function renderHome(titles) {
           <div class="row-head">
             <h2 class="row-title">La meva llista</h2>
             <div class="row-side">
-              <span class="row-count">${saved.length} títols</span>
               <span class="row-arrows">
                 <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
                 <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
@@ -522,7 +524,6 @@ async function renderHome(titles) {
           <div class="row-head">
             <h2 class="row-title">Nou al catàleg</h2>
             <div class="row-side">
-              <span class="row-count">${news.total} al total</span>
               <span class="row-arrows">
                 <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
                 <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
@@ -591,7 +592,6 @@ async function renderHome(titles) {
       <div class="row-head">
         <h2 class="row-title">${escapeHtml(row.label)}</h2>
         <div class="row-side">
-          <span class="row-count">${row.list.length} títols</span>
           <span class="row-arrows">
             <button class="row-arrow" data-dir="-1" aria-label="Enrere">${ICON_CHEV_L}</button>
             <button class="row-arrow" data-dir="1" aria-label="Endavant">${ICON_CHEV_R}</button>
@@ -695,6 +695,265 @@ async function renderMyList() {
   }
 }
 
+/** Pàgina d'usuari: perfil + la seva llista + accés a la configuració. */
+async function renderUserPage() {
+  const content = $('#content');
+  const uid = activeProfileId();
+
+  if (!uid) {
+    content.innerHTML = `
+      <div class="user-page">
+        <div class="user-head">
+          <span class="user-avatar">?</span>
+          <div class="user-head-info">
+            <h1 class="user-name">Benvingut a Hermes</h1>
+            <p class="user-sub">Crea un compte per guardar la teva llista, el progrés i les preferències.</p>
+            <div class="user-actions">
+              <button class="btn btn-play" id="userLoginBtn">Inicia sessió o registra't</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    $('#userLoginBtn').onclick = () => openAuth('login');
+    return;
+  }
+
+  content.innerHTML = `
+    <div class="user-page">
+      <div class="user-head">
+        <span class="user-avatar" id="userPageAvatar">?</span>
+        <div class="user-head-info">
+          <h1 class="user-name" id="userPageName">…</h1>
+          <p class="user-sub">La teva llista i la teva configuració</p>
+        </div>
+        <button class="user-gear" id="userGearBtn" title="Configuració" aria-label="Configuració">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        </button>
+      </div>
+      <div id="userListWrap">${skeletonGrid(8)}</div>
+    </div>`;
+
+  try {
+    const me = await api('/api/me');
+    applyMeToUI(me);
+    $('#userPageName').textContent = me.display_name;
+    renderUserAvatar($('#userPageAvatar'), me);
+  } catch { /* sessió caducada: seguim amb el cache local */ }
+
+  try {
+    const saved = await api('/api/me/watchlist');
+    const wrap = $('#userListWrap');
+    if (!saved.length) {
+      wrap.innerHTML = '<h2 class="row-title" style="margin-top:1.4rem;">La meva llista</h2><div class="empty">Encara no has desat cap títol. Toca el cor d\'un pòster per desar-lo aquí.</div>';
+    } else {
+      wrap.innerHTML = `<h2 class="row-title" style="margin-top:1.4rem;">La meva llista</h2><div class="grid">${saved.map(posterCard).join('')}</div>`;
+    }
+  } catch (e) {
+    $('#userListWrap').innerHTML = `<div class="empty">Error carregant la llista: ${escapeHtml(e.message)}</div>`;
+  }
+
+  $('#userGearBtn').onclick = () => openSettings();
+}
+
+/** Pinta un avatar (foto o inicial) en un contenidor. */
+function renderUserAvatar(el, me) {
+  if (!el) return;
+  if (me && me.photo) {
+    el.innerHTML = `<img src="${escapeHtml(me.photo)}" alt="">`;
+    el.classList.add('has-photo');
+  } else {
+    const name = (me && me.display_name) || localStorage.getItem('hermes.activeName') || '?';
+    el.textContent = profileInitial(name);
+    el.classList.remove('has-photo');
+  }
+}
+
+/** Aplica nom/foto de l'usuari a la navbar (PC) i a la barra inferior (mòbil). */
+function applyMeToUI(me) {
+  if (!me) return;
+  localStorage.setItem('hermes.activeName', me.display_name);
+  localStorage.setItem('hermes.activePhoto', me.photo || '');
+  updateAuthUI();
+}
+
+/* ── Modal de configuració del compte ── */
+
+let settingsMe = null;
+
+function openSettings() {
+  const overlay = $('#settingsOverlay');
+  $('#settingsError').textContent = '';
+  $('#settingsPassword').value = '';
+  $('#settingsPassword2').value = '';
+  $('#settingsNameHint').textContent = '';
+  $('#settingsPasswordHint').textContent = '';
+  $('#settingsConfirmHint').textContent = '';
+  overlay.classList.remove('hidden');
+  void (async () => {
+    try {
+      settingsMe = await api('/api/me');
+    } catch {
+      settingsMe = null;
+    }
+    if (!settingsMe) { overlay.classList.add('hidden'); return; }
+    $('#settingsName').value = settingsMe.display_name;
+    $('#photoRemove').hidden = !settingsMe.photo;
+    renderUserAvatar($('#settingsAvatar'), settingsMe);
+    $('#settingsAnimeState').textContent = showAnimeEnabled() ? 'Activat' : 'Desactivat';
+  })();
+}
+function closeSettings() {
+  $('#settingsOverlay').classList.add('hidden');
+}
+
+function settingsValidate() {
+  const name = $('#settingsName').value.trim();
+  if (!USERNAME_RE.test(name)) return 'El nom ha de tenir 3-20 caràcters: lletres, números, punt, guió o guió baix';
+  const p1 = $('#settingsPassword').value;
+  const p2 = $('#settingsPassword2').value;
+  if (p1 && p1.length < 6) return 'La contrasenya ha de tenir com a mínim 6 caràcters';
+  if (p1 && p1 !== p2) return 'Les contrasenyes no coincideixen';
+  return null;
+}
+
+async function saveSettings() {
+  const err = settingsValidate();
+  if (err) { $('#settingsError').textContent = err; return; }
+  $('#settingsError').textContent = '';
+  const btn = $('#settingsSave');
+  btn.disabled = true;
+  try {
+    const body = { displayName: $('#settingsName').value.trim() };
+    const pwd = $('#settingsPassword').value;
+    if (pwd) body.password = pwd;
+    const me = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...requestHeaders() },
+      body: JSON.stringify(body)
+    }).then(r => r.json());
+    if (me.error) throw new Error(me.error);
+    settingsMe = me;
+    applyMeToUI(me);
+    if (state.section === 'usuari') renderLibrary();
+    $('#settingsPassword').value = '';
+    $('#settingsPassword2').value = '';
+    toast('Canvis desats', 'success');
+  } catch (e) {
+    $('#settingsError').textContent = e.message || 'No s\'han pogut desar els canvis';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** Redimensiona la imatge triada a 160×160 i la converteix en data URL. */
+function readPhotoFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const size = 160;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        // retall quadrat centrat
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function initSettingsModal() {
+  $('#settingsClose').onclick = closeSettings;
+  $('#settingsOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSettings(); });
+  $('#settingsSave').addEventListener('click', saveSettings);
+  $('#settingsAnimeToggle').addEventListener('click', () => {
+    setShowAnime(!showAnimeEnabled());
+    $('#settingsAnimeState').textContent = showAnimeEnabled() ? 'Activat' : 'Desactivat';
+  });
+  $('#settingsLogout').addEventListener('click', () => { closeSettings(); logout(); });
+  $('#settingsEye').addEventListener('click', () => {
+    const input = $('#settingsPassword');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  });
+  $('#settingsName').addEventListener('input', () => {
+    const name = $('#settingsName').value.trim();
+    const hint = $('#settingsNameHint');
+    if (name && !USERNAME_RE.test(name)) {
+      hint.textContent = '3-20 caràcters: lletres, números, punt, guió o guió baix';
+      hint.classList.add('auth-hint-error');
+    } else {
+      hint.textContent = '';
+      hint.classList.remove('auth-hint-error');
+    }
+  });
+  const syncHints = () => {
+    const p1 = $('#settingsPassword').value;
+    const p2 = $('#settingsPassword2').value;
+    const h1 = $('#settingsPasswordHint');
+    const h2 = $('#settingsConfirmHint');
+    if (p1 && p1.length < 6) {
+      h1.textContent = 'Mínim 6 caràcters';
+      h1.classList.add('auth-hint-error');
+    } else { h1.textContent = ''; h1.classList.remove('auth-hint-error'); }
+    if (p2 && p1 && p1 !== p2) {
+      h2.textContent = 'No coincideixen';
+      h2.classList.add('auth-hint-error');
+    } else { h2.textContent = ''; h2.classList.remove('auth-hint-error'); }
+  };
+  $('#settingsPassword').addEventListener('input', syncHints);
+  $('#settingsPassword2').addEventListener('input', syncHints);
+
+  $('#photoInput').addEventListener('change', async () => {
+    const file = $('#photoInput').files && $('#photoInput').files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await readPhotoFile(file);
+      const r = await fetch('/api/me/avatar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...requestHeaders() },
+        body: JSON.stringify({ photo: dataUrl })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Error');
+      settingsMe = d.photo !== undefined ? { ...settingsMe, photo: d.photo } : settingsMe;
+      renderUserAvatar($('#settingsAvatar'), settingsMe);
+      applyMeToUI(settingsMe);
+      if (state.section === 'usuari') renderLibrary();
+      $('#photoRemove').hidden = false;
+      toast('Foto actualitzada', 'success');
+    } catch (e) {
+      toast(e.message || 'No s\'ha pogut pujar la foto', 'error');
+    } finally {
+      $('#photoInput').value = '';
+    }
+  });
+
+  $('#photoRemove').addEventListener('click', async () => {
+    try {
+      const r = await fetch('/api/me/avatar', { method: 'DELETE', headers: requestHeaders() });
+      if (!r.ok) throw new Error('Error');
+      settingsMe = { ...settingsMe, photo: null };
+      renderUserAvatar($('#settingsAvatar'), settingsMe);
+      applyMeToUI(settingsMe);
+      if (state.section === 'usuari') renderLibrary();
+      $('#photoRemove').hidden = true;
+      toast('Foto eliminada', 'success');
+    } catch (e) {
+      toast('No s\'ha pogut eliminar la foto', 'error');
+    }
+  });
+}
+
 async function renderDetail(id, opts) {
   opts = opts || {};
   if (opts.navigate !== false) navigateTo(`/detall/${encodeURIComponent(id)}`);
@@ -706,10 +965,6 @@ async function renderDetail(id, opts) {
     const poster = title.poster_url
       ? `<img class="detail-poster" src="${escapeHtml(title.poster_url)}" alt="">`
       : `<div class="detail-poster placeholder" style="aspect-ratio:2/3;background:#1f1f33;display:flex;align-items:center;justify-content:center;"><div style="width:28%;color:#4a4a6a;">${ICON_POSTER_PLACEHOLDER.replace('<svg class="poster-ph" width="40" height="40"', '<svg class="poster-ph" width="100%" height="auto"')}</div></div>`;
-
-    const caInfo = title.original_language === 'ca'
-      ? '<span class="meta-pill pill-ca">Original en català</span>'
-      : (title.has_ca ? '<span class="meta-pill pill-ca">Doblat/subtitulat en català</span>' : '');
     const playTarget = title.episodes?.[0];
     const rating = Number(title.vote_average || 0);
     const ratingHtml = rating > 0
@@ -759,7 +1014,6 @@ async function renderDetail(id, opts) {
               <span class="win-txt">${state.watch.has(title.id) ? 'A la meva llista' : 'Desa a la meva llista'}</span>
             </button>
           </div>
-          ${caInfo ? `<p class="detail-ca-info">${caInfo}</p>` : ''}
         </div>
       </div>
       ${providers.length ? `
@@ -1639,6 +1893,7 @@ function setSession(id, name) {
 function logout() {
   localStorage.removeItem(PROFILE_KEY);
   localStorage.removeItem('hermes.activeName');
+  localStorage.removeItem('hermes.activePhoto');
   updateAuthUI();
   applyRoute();
 }
@@ -1674,15 +1929,18 @@ function updateAuthUI() {
   const logged = activeProfileId();
   $('#guestMenu').toggleAttribute('hidden', !!logged);
   $('#accountMenu').toggleAttribute('hidden', !logged);
+  const photo = localStorage.getItem('hermes.activePhoto') || '';
   if (logged) {
     const name = localStorage.getItem('hermes.activeName') || 'Compte';
-    $('#avatarLetter').textContent = profileInitial(name);
+    renderUserAvatar($('#avatarLetter'), { display_name: name, photo });
     $('#profileName').textContent = name;
     const bu = $('#bottomUserLabel');
-    if (bu) bu.textContent = name.charAt(0) || 'U';
+    if (bu) bu.textContent = name;
+    renderUserAvatar($('#bottomAvatar'), { display_name: name, photo });
   } else {
     const bu = $('#bottomUserLabel');
     if (bu) bu.textContent = 'Usuari';
+    renderUserAvatar($('#bottomAvatar'), null);
   }
 }
 
@@ -1693,7 +1951,8 @@ const SECTION_ROUTES = {
   'pel·lícules': '/pelicules',
   'sèries': '/series',
   'continuar': '/continuar',
-  'meva-llista': '/meva-llista'
+  'meva-llista': '/meva-llista',
+  'usuari': '/usuari'
 };
 const ROUTE_SECTIONS = Object.fromEntries(Object.entries(SECTION_ROUTES).map(([k, v]) => [v, k]));
 
@@ -1731,17 +1990,15 @@ function setSection(section, opts) {
   document.body.classList.toggle('on-home', section === 'inici');
   document.querySelectorAll('.section-link').forEach(b =>
     b.classList.toggle('active', b.dataset.section === section));
-  // Canviar de secció sempre netega la cerca activa (botons, bottom-nav...)
-  state.search = '';
-  const navSearch = $('#navbarSearch');
-  if (navSearch) navSearch.value = '';
-  if (section !== 'inici' && section !== 'cataleg' && section !== 'continuar' && section !== 'meva-llista') {
-    // Actualitzar el filtre de tipus segons la secció
-    if (section === 'pel·lícules') { state.type = 'movie'; }
-    else if (section === 'sèries') { state.type = 'series'; }
-  } else {
-    state.type = '';
+  // Canviar de secció netega la cerca activa (excepte quan venim de buscar)
+  if (!opts.keepSearch) {
+    state.search = '';
+    const navSearch = $('#navbarSearch');
+    if (navSearch) navSearch.value = '';
   }
+  if (section === 'pel·lícules') { state.type = 'movie'; }
+  else if (section === 'sèries') { state.type = 'series'; }
+  else { state.type = ''; }
   if (opts.navigate !== false) navigateTo(routeForSection(section));
   renderLibrary();
 }
@@ -1750,6 +2007,10 @@ function setSection(section, opts) {
 function init() {
   loadAnimePrefFromServer();
   updateAnimeToggleUI();
+  // Sincronitza nom/foto del compte actiu (la foto viva a la navbar)
+  if (activeProfileId()) {
+    api('/api/me').then(applyMeToUI).catch(() => {});
+  }
   document.querySelectorAll('.section-link').forEach(btn => {
     btn.onclick = () => setSection(btn.dataset.section);
   });
@@ -1799,20 +2060,16 @@ function init() {
     renderLibrary();
   });
 
-  // Menú del compte (tancar sessió + toggle animes)
+  // Perfil: obre la secció d'usuari (PC i mòbil)
   $('#profileBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    $('#accountDropdown').toggleAttribute('hidden');
+    $('#guestDropdown').setAttribute('hidden', '');
+    setSection('usuari');
   });
-  $('#animeToggle').addEventListener('click', (e) => {
-    e.stopPropagation();
-    setShowAnime(!showAnimeEnabled());
-  });
-  $('#logoutBtn').addEventListener('click', logout);
   document.addEventListener('click', () => {
-    $('#accountDropdown').setAttribute('hidden', '');
     $('#guestDropdown').setAttribute('hidden', '');
   });
+  initSettingsModal();
 
   // Botó de cerca a la barra inferior (mòbil): porta a la benvinguda i, si ja hi som, enfoca la barra
   $('#bottomSearchBtn').addEventListener('click', (e) => {
@@ -1829,18 +2086,12 @@ function init() {
     }
   });
 
-  // Botó d'usuari a la barra inferior (mòbil)
+  // Botó d'usuari a la barra inferior (mòbil): pàgina d'usuari (o accés si no hi ha sessió)
   $('#bottomUserBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (activeProfileId()) {
-      $('#accountDropdown').setAttribute('hidden', '');
-      $('#guestDropdown').setAttribute('hidden', '');
-      $('#accountDropdown').toggleAttribute('hidden');
-    } else {
-      $('#guestDropdown').setAttribute('hidden', '');
-      $('#accountDropdown').setAttribute('hidden', '');
-      $('#guestDropdown').toggleAttribute('hidden');
-    }
+    $('#guestDropdown').setAttribute('hidden', '');
+    if (activeProfileId()) setSection('usuari');
+    else openAuth('login');
   });
 
   // Delegació de clics a targetes

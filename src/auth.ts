@@ -31,9 +31,54 @@ export function getUserByName(db: Database.Database, name: string): { id: string
   }) || null;
 }
 
-export function listProfiles(db: Database.Database, currentId: string | null): { id: string; display_name: string; current: boolean }[] {
-  const rows = db.prepare('SELECT id, display_name FROM users ORDER BY created_at ASC').all() as { id: string; display_name: string }[];
-  return rows.map((r) => ({ id: r.id, display_name: r.display_name, current: currentId != null && r.id === currentId }));
+export interface MeInfo {
+  id: string;
+  display_name: string;
+  photo: string | null;
+  has_password: boolean;
+}
+
+export function getMe(db: Database.Database, id: string): MeInfo | null {
+  const r = db.prepare('SELECT id, display_name, photo, password_hash FROM users WHERE id = ?').get(id) as
+    | { id: string; display_name: string; photo: string | null; password_hash: string | null }
+    | undefined;
+  if (!r) return null;
+  return { id: r.id, display_name: r.display_name, photo: r.photo, has_password: !!r.password_hash };
+}
+
+/** Actualitza nom i/o contrasenya del compte actiu. */
+export function updateMe(
+  db: Database.Database,
+  id: string,
+  update: { displayName?: string; password?: string | null }
+): { ok: boolean; error?: string } {
+  const me = db.prepare('SELECT id, display_name, password_hash FROM users WHERE id = ?').get(id) as
+    | { id: string; display_name: string; password_hash: string | null }
+    | undefined;
+  if (!me) return { ok: false, error: 'Perfil no trobat' };
+
+  if (update.displayName != null) {
+    const name = update.displayName.trim();
+    if (name !== me.display_name) {
+      const existing = getUserByName(db, name);
+      if (existing && existing.id !== id) return { ok: false, error: 'Aquest nom ja existeix' };
+      db.prepare("UPDATE users SET display_name = ?, updated_at = datetime('now') WHERE id = ?").run(name, id);
+    }
+  }
+  if (update.password != null && update.password !== '') {
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(hashPassword(update.password), id);
+  }
+  return { ok: true };
+}
+
+/** Desa o elimina la foto de perfil (data URL). */
+export function setPhoto(db: Database.Database, id: string, photo: string | null): void {
+  db.prepare("UPDATE users SET photo = ?, updated_at = datetime('now') WHERE id = ?").run(photo, id);
+}
+
+export function listProfiles(db: Database.Database, currentId: string | null): { id: string; display_name: string; photo: string | null; current: boolean }[] {
+  const rows = db.prepare('SELECT id, display_name, photo FROM users ORDER BY created_at ASC').all() as { id: string; display_name: string; photo: string | null }[];
+  return rows.map((r) => ({ id: r.id, display_name: r.display_name, photo: r.photo, current: currentId != null && r.id === currentId }));
 }
 
 export function createProfile(db: Database.Database, name: string, password: string | null): { id: string; display_name: string } {

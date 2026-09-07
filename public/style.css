@@ -238,6 +238,62 @@ body.on-home .nav-search { display: none; }
 .dropdown-toggle { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .toggle-state { color: var(--muted); font-size: 0.76rem; }
 .dropdown-toggle:hover .toggle-state { color: var(--amber); }
+
+/* ── Pàgina d'usuari ── */
+.user-page { max-width: 1000px; margin: 0 auto; padding: 0.5rem 0.2rem 2rem; }
+.user-head {
+  position: relative;
+  display: flex; align-items: center; gap: 1.1rem;
+  padding: 1.6rem 1.4rem; margin-top: 1rem;
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border); border-radius: 18px;
+}
+.user-avatar {
+  width: 72px; height: 72px; flex: none; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--amber-glow);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.9rem; font-weight: 700; color: var(--amber-bright);
+  overflow: hidden;
+}
+.user-avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; }
+.user-name { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; }
+.user-sub { color: var(--muted); font-size: 0.88rem; margin-top: 0.2rem; }
+.user-actions { margin-top: 0.9rem; }
+.user-gear {
+  position: absolute; top: 1.1rem; right: 1.1rem;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s, border-color 0.15s, transform 0.15s;
+}
+.user-gear:hover { color: var(--amber-bright); border-color: var(--amber-glow); transform: rotate(25deg); }
+
+/* ── Modal de configuració ── */
+.settings-box { max-width: 440px; }
+.settings-avatar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.1rem; }
+.settings-avatar {
+  width: 64px; height: 64px; flex: none; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--amber-glow);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 700; color: var(--amber-bright);
+  overflow: hidden;
+}
+.settings-avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; }
+.settings-avatar-actions { display: flex; flex-direction: column; gap: 0.4rem; }
+.settings-row { margin-top: 0.9rem; border-top: 1px solid var(--border); padding-top: 0.6rem; }
+.settings-row .dropdown-item { border-radius: 8px; }
+.settings-logout { color: var(--danger); }
+.settings-logout:hover { background: rgba(255, 143, 143, 0.08); color: var(--danger); }
+
+/* Avatar a la barra inferior (mòbil) */
+.bottom-avatar {
+  width: 22px; height: 22px; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--amber-bright);
+  font-size: 0.7rem; font-weight: 700;
+}
+.bottom-avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-caret { color: var(--muted); font-size: 0.7rem; display: inline-flex; margin-left: 0.2rem; }
 
 /* Modal d'inici de sessió / registre */
@@ -456,7 +512,6 @@ body.on-home .nav-search { display: none; }
 .row { margin-bottom: 2.4rem; }
 .row-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.9rem; }
 .row-title { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
-.row-count { color: var(--muted); font-size: 0.8rem; }
 .row-side { display: inline-flex; align-items: center; gap: 0.7rem; }
 .row-arrows { display: inline-flex; gap: 0.3rem; }
 .row-arrow {
@@ -630,8 +685,6 @@ body.on-home .nav-search { display: none; }
 .detail-meta .pill-anime { color: #ffd9a8; border-color: rgba(255, 190, 120, 0.45); }
 .detail-meta .pill-rating { display: inline-flex; align-items: center; gap: 0.3rem; color: #ffe9b0; border-color: rgba(255, 220, 130, 0.4); }
 .detail-meta .pill-rating svg { color: #f5c95a; }
-.detail-ca-info { margin-top: 0.7rem; }
-.detail-ca-info .pill-ca { color: var(--amber-bright); border-color: var(--amber-glow); }
 /* Files de proveïdors "On veure-ho" */
 .provider-item { text-decoration: none; color: inherit; }
 .provider-item:hover { border-color: var(--amber-glow); }

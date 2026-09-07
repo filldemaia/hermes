@@ -125,6 +125,9 @@ CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
   if (!cols.includes('password_hash')) {
     db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT');
   }
+  if (!cols.includes('photo')) {
+    db.exec('ALTER TABLE users ADD COLUMN photo TEXT');
+  }
 
   migrateGenresToCa(db);
 }
