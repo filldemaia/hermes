@@ -450,6 +450,7 @@ function renderWelcome() {
   const content = $('#content');
   content.innerHTML = `
     <section class="welcome welcome-revealed welcome-screen">
+      ${activeProfileId() ? '' : '<button class="welcome-auth" id="welcomeAuth">Entra</button>'}
       <div class="welcome-inner">
         <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></span>
         <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
@@ -457,15 +458,19 @@ function renderWelcome() {
           <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
         </div>
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
+      </div>
+      <footer class="legal-footer">
         <p class="legal-note">
           Hermes no allotja ni distribueix contingut protegit: és un catàleg que enllaça
           la distribució legal de cada títol. Metadades i imatges per cortesia de
           <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDb</a>.
           <a href="https://github.com/filldemaia/hermes" target="_blank" rel="noopener noreferrer">Codi font</a> · Llicència MIT.
         </p>
-      </div>
+      </footer>
     </section>
   `;
+
+  $('#welcomeAuth')?.addEventListener('click', () => openAuth('login'));
 
   $('#revealBtn')?.addEventListener('click', (e) => {
     e.preventDefault();

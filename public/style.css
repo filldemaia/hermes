@@ -201,13 +201,46 @@ body.on-home .nav-search { display: none; }
 .welcome-revealed .search { max-width: 460px; }
 .welcome-revealed .search input { padding: 0.7rem 1.3rem; font-size: 0.95rem; }
 
-/* Pàgina inicial (/) a pantalla plena: benvinguda centrada verticalment */
-.welcome-screen { min-height: calc(100vh - 130px); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+/* Pàgina inicial (/) immersiva: sense topbar (PC i mòbil), contingut centrat
+   i el peu legal al fons de la pantalla */
+.on-home .topbar { display: none; }
+.welcome-screen {
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+}
 .welcome-screen .welcome-inner { margin: 0 auto; }
 .welcome-screen .welcome-logo { font-size: clamp(2.4rem, 6vw, 4rem); }
-.welcome-screen .welcome-tagline { margin: 0.8rem auto 1.4rem; font-size: clamp(1rem, 2vw, 1.2rem); }
+/* Bloc central: amunt i amb aire entre el logo i la cerca */
+.welcome-screen .welcome-inner { transform: translateY(-6vh); }
+.welcome-screen .welcome-tagline { margin: 0.9rem auto 3rem; font-size: clamp(1rem, 2vw, 1.2rem); }
+/* Cerca en format línia (subratllat), sense bombolla */
 .welcome-screen .search { max-width: 540px; }
-.welcome-screen .search input { padding: 1rem 1.6rem; font-size: 1.1rem; }
+.welcome-screen .search input {
+  background: transparent; border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0; padding: 0.7rem 0.3rem;
+  font-size: 1.05rem; box-shadow: none;
+}
+.welcome-screen .search input:focus { border-bottom-color: var(--amber); box-shadow: none; }
+.welcome-screen .search input::placeholder { color: var(--muted); }
+/* Accés discret des de la benvinguda (sense topbar no hi ha botó Entra) */
+.welcome-auth {
+  position: fixed; top: 1.1rem; right: clamp(1rem, 3vw, 2.4rem); z-index: 40;
+  background: transparent; border: 1px solid var(--border-strong);
+  color: var(--text-soft); border-radius: 999px;
+  padding: 0.4rem 1.1rem; font-size: 0.85rem; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.welcome-auth:hover { color: var(--amber-bright); border-color: var(--amber-glow); }
+/* Peu legal clavat a baix de la pantalla */
+.legal-footer {
+  width: 100%; margin-top: auto;
+  padding: 1rem 1.2rem calc(1rem + env(safe-area-inset-bottom));
+  text-align: center;
+}
+.legal-footer .legal-note { margin: 0 auto; }
 
 /* Avís legal del peu de benvinguda */
 .legal-note {
@@ -981,7 +1014,12 @@ body.on-home .nav-search { display: none; }
 @media (max-width: 720px) {
   /* A mòbil la navegació és només la barra inferior: amaguem la superior sencera */
   .topbar { display: none; }
-  .welcome-screen { min-height: calc(100dvh - 140px); }
+  /* Benvinguda: amb espai per a la barra inferior (el peu legal no quedi tapat) */
+  .welcome-screen {
+    min-height: 100dvh;
+    padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  }
+  .welcome-screen .welcome-inner { transform: none; }
   .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
   .detail { flex-direction: column; }
   .detail-poster { width: 100%; max-width: 220px; }
