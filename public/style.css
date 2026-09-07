@@ -954,6 +954,11 @@ body.on-home .nav-search { display: none; }
   transition: color 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
+/* Només icones a la barra inferior (els textos queden per a lectors de pantalla) */
+.bottom-link > span:not(.bottom-avatar) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
 .bottom-link:hover { color: var(--text); }
 .bottom-link.active, .bottom-link.bottom-user.active { color: var(--amber-bright); }
 .bottom-link.active { font-weight: 600; }
