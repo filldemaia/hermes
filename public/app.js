@@ -15,6 +15,11 @@ const state = {
 
 const $ = (sel) => document.querySelector(sel);
 
+/** Vista mòbil (barra inferior, sense topbar): mateix tall que el CSS. */
+function isMobile() {
+  return window.matchMedia('(max-width: 720px)').matches;
+}
+
 const GENRE_LABELS = {
   'Acció': 'Acció', 'Aventura': 'Aventura', 'Animació': 'Animació', 'Comèdia': 'Comèdia',
   'Crim': 'Crim', 'Documental': 'Documental', 'Drama': 'Drama', 'Familiar': 'Familiar',
@@ -292,8 +297,23 @@ async function renderLibrary() {
       await renderHome(data.data);
     } else {
       // Cerca: graella amb scroll infinit (les pòsters carreguen en entrar a la vista)
-      content.innerHTML = `<h1 class="page-title">${state.search ? 'Resultats de la cerca' : sectionTitle}</h1>`;
+      const searchBar = isMobile() ? `
+        <div class="search-inline">
+          <input type="search" id="inlineSearch" value="${escapeHtml(state.search)}" placeholder="Cerca per títol..." enterkeyhint="search" autocomplete="off">
+        </div>` : '';
+      content.innerHTML = `${searchBar}<h1 class="page-title">${state.search ? 'Resultats de la cerca' : sectionTitle}</h1>`;
       setupInfiniteGrid(content, data);
+      const inline = $('#inlineSearch');
+      if (inline) {
+        inline.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          const q = inline.value.trim();
+          if (q) state.search = q;
+          else { state.search = ''; setSection('cataleg'); return; }
+          renderLibrary();
+        });
+      }
     }
   } catch (e) {
     console.error(e);
@@ -428,7 +448,7 @@ function renderWelcome() {
         <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></span>
         <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
         <div class="search">
-          <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off">
+          <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
         </div>
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
       </div>
@@ -443,14 +463,25 @@ function renderWelcome() {
 
   const search = $('#searchInput');
   if (search) {
-    let t;
-    search.addEventListener('input', () => {
-      clearTimeout(t);
-      t = setTimeout(() => {
-        const q = search.value.trim();
-        if (q) { state.search = q; setSection('cataleg'); }
-      }, 350);
-    });
+    const submit = () => {
+      const q = search.value.trim();
+      if (q) { state.search = q; setSection('cataleg'); }
+    };
+    if (isMobile()) {
+      // Mòbil: la cerca només s'envia quan l'usuari la confirma (Enter)
+      search.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      });
+    } else {
+      let t;
+      search.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          const q = search.value.trim();
+          if (q) { state.search = q; setSection('cataleg'); }
+        }, 350);
+      });
+    }
   }
 }
 
@@ -1700,10 +1731,10 @@ function setSection(section, opts) {
   document.body.classList.toggle('on-home', section === 'inici');
   document.querySelectorAll('.section-link').forEach(b =>
     b.classList.toggle('active', b.dataset.section === section));
-  if (section === 'inici') {
-    // A l'Inici no hi ha cerca: netegem qualsevol text pendent
-    state.search = '';
-  }
+  // Canviar de secció sempre netega la cerca activa (botons, bottom-nav...)
+  state.search = '';
+  const navSearch = $('#navbarSearch');
+  if (navSearch) navSearch.value = '';
   if (section !== 'inici' && section !== 'cataleg' && section !== 'continuar' && section !== 'meva-llista') {
     // Actualitzar el filtre de tipus segons la secció
     if (section === 'pel·lícules') { state.type = 'movie'; }
@@ -1759,6 +1790,12 @@ function init() {
   $('#navbarSearch').addEventListener('input', () => {
     state.search = $('#navbarSearch').value.trim();
     state.page = 1;
+    if (state.section === 'inici') {
+      // Des de la benvinguda: salta a la vista de resultats sense netejar la cerca
+      state.section = 'cataleg';
+      document.body.classList.remove('on-home');
+      navigateTo('/cataleg');
+    }
     renderLibrary();
   });
 

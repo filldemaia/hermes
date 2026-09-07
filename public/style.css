@@ -580,6 +580,18 @@ body.on-home .nav-search { display: none; }
 .grid-sentinel { display: flex; justify-content: center; padding: 1.5rem 0 2.5rem; }
 .grid-sentinel .loading { padding: 0; }
 
+/* Barra de cerca incrustada a la vista de resultats (només mòbil: la topbar hi és amagada) */
+.search-inline { display: none; margin: 0.6rem 0 0.2rem; }
+.search-inline input {
+  width: 100%; padding: 0.7rem 1rem; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 1rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-inline input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+@media (max-width: 720px) {
+  .search-inline { display: block; }
+}
+
 
 
 /* ─────────────── Detall del títol ─────────────── */
