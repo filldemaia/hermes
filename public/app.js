@@ -119,21 +119,18 @@ const ICON_STAR = '<svg width="13" height="13" viewBox="0 0 24 24" fill="current
 
 /* Esquelets de càrrega (shimmer) */
 function skeletonGrid(n) {
-  const cards = Array.from({ length: n }, () =>
-    `<div class="card skeleton-card"><div class="skeleton-poster"></div><div class="skeleton-line"></div><div class="skeleton-line wide"></div></div>`).join('');
-  return `<div class="skeleton-grid">${cards}</div>`;
+  return caduceusLoader(n);
 }
 
 function skeletonDetail() {
-  return `<div class="skeleton-detail">
-    <div class="skeleton-poster"></div>
-    <div class="skeleton-body">
-      <div class="skeleton-line wide"></div>
-      <div class="skeleton-line"></div>
-      <div class="skeleton-line"></div>
-      <div class="skeleton-line" style="width:55%"></div>
-    </div>
-  </div>`;
+  return caduceusLoader();
+}
+
+/** Indicador de càrrega: el caduceu passa de negre a platejat (<1 s per sentit). */
+function caduceusLoader(count = 1) {
+  const img = `<img class="caduceus-loader" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">`;
+  if (count <= 1) return `<div class="loader-wrap">${img}</div>`;
+  return `<div class="loader-grid">${Array.from({ length: count }, () => `<div class="loader-cell">${img}</div>`).join('')}</div>`;
 }
 
 /** Targeta de "Continuar veient": porta als episodis en progrés. */
@@ -175,7 +172,7 @@ function posterCard(t) {
       ${badges.length ? `<div class="card-badges">${badges.join('')}</div>` : ''}
       <div class="card-body">
         <div class="card-title">${escapeHtml(t.catalan_title || t.original_title)}</div>
-        <div class="card-meta">${escapeHtml(t.year || '')}${t.original_language === 'ca' ? ' · Original en català' : (t.has_ca ? ' · Doblat en català' : '')}</div>
+        <div class="card-meta">${escapeHtml(t.year || '')}</div>
       </div>
     </div>
   `;
