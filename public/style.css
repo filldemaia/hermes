@@ -25,7 +25,7 @@
   --muted: #8f8c84;
   --danger: #ff8f8f;
 
-  --serif: 'Georgia', 'Times New Roman', 'Iowan Old Style', serif;
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --radius: 12px;
@@ -76,14 +76,14 @@ body {
   background: none; border: none; cursor: pointer; padding: 0;
 }
 .caduceus {
-  width: 26px; height: 26px; flex: none;
+  width: 30px; height: 30px; flex: none;
   color: var(--amber-bright);
 }
 .logo {
   font-family: var(--serif);
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: 4px;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 5px;
   background-image: var(--logo-gradient);
   -webkit-background-clip: text;
   background-clip: text;
@@ -258,7 +258,7 @@ body.on-home .nav-search { display: none; }
   margin: 0;
 }
 .auth-logo {
-  font-family: var(--serif); font-size: 1.3rem; letter-spacing: 5px;
+  font-family: var(--serif); font-size: 1.5rem; letter-spacing: 5px;
   background-image: linear-gradient(180deg, #f8fbfd 0%, #d9dfe6 22%, #ffffff 46%, #9aa4b0 66%, #cdd5de 100%);
   -webkit-background-clip: text;
   background-clip: text;

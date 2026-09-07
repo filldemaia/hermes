@@ -3,21 +3,22 @@
  * i assets; la cache només serveix d'auxiliar (offline/velocitat), mai provoca
  * que els usuaris vegin versions antigues.
  */
-const VERSION = 'hermes-v27';
+const VERSION = 'hermes-v28';
 const CORE = [
   '/',
-  '/style.css?v=35',
+  '/style.css?v=36',
   '/app.js?v=34',
   '/manifest.webmanifest',
-  '/assets/caduceus.svg?v=29',
-  '/icon-192.png?v=26',
-  '/icon-512.png?v=26',
-  '/icon-maskable-192.png?v=26',
-  '/icon-maskable-512.png?v=26',
-  '/apple-touch-icon.png?v=26',
-  '/favicon.ico?v=18',
-  '/favicon-32.png?v=18',
-  '/favicon-16.png?v=18'
+  '/assets/caduceus.svg?v=30',
+  '/icon-192.png?v=27',
+  '/icon-512.png?v=27',
+  '/icon-maskable-192.png?v=27',
+  '/icon-maskable-512.png?v=27',
+  '/apple-touch-icon.png?v=27',
+  '/favicon.ico?v=19',
+  '/favicon-48.png?v=19',
+  '/favicon-32.png?v=19',
+  '/favicon-16.png?v=19'
 ];
 
 self.addEventListener('install', (event) => {
