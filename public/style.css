@@ -204,6 +204,7 @@ body.on-home .nav-search { display: none; }
 /* Pàgina inicial (/) immersiva: sense topbar (PC i mòbil), contingut centrat
    i el peu legal al fons de la pantalla */
 .on-home .topbar { display: none; }
+body.on-home { overflow: hidden; }
 .welcome-screen {
   min-height: 100dvh;
   display: flex; flex-direction: column;
@@ -218,18 +219,17 @@ body.on-home .nav-search { display: none; }
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding-bottom: 4vh;
+  padding-bottom: 2vh;
 }
 .welcome-screen .welcome-logo {
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  margin-bottom: clamp(1.6rem, 5vh, 3.6rem);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  margin-bottom: clamp(1rem, 3.5vh, 2.6rem);
 }
-/* Ordre: logo → cerca → botó → lema (el text tanca el bloc) */
-.welcome-screen .search { margin-bottom: clamp(1.6rem, 4vh, 2.4rem); }
-.welcome-screen .btn-reveal { margin-bottom: clamp(1.8rem, 4.5vh, 2.8rem); }
-.welcome-screen .welcome-tagline { margin: 0 auto; font-size: clamp(1rem, 2vw, 1.2rem); }
+/* Ordre: logo → cerca → botó (tot sense scroll a la benvinguda) */
+.welcome-screen .search { margin-bottom: clamp(1.1rem, 2.8vh, 1.8rem); }
+.welcome-screen .btn-reveal { margin-bottom: clamp(1rem, 2.8vh, 1.8rem); }
 /* Cerca en format línia (subratllat), sense bombolla */
-.welcome-screen .search { width: 100%; max-width: 720px; }
+.welcome-screen .search { width: 100%; max-width: 560px; }
 .welcome-screen .search input {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
@@ -250,7 +250,7 @@ body.on-home .nav-search { display: none; }
 /* Peu legal clavat a baix de la pantalla */
 .legal-footer {
   width: 100%; margin-top: auto;
-  padding: 1rem 1.2rem calc(1rem + env(safe-area-inset-bottom));
+  padding: 0.7rem 1.2rem calc(0.7rem + env(safe-area-inset-bottom));
   text-align: center;
 }
 .legal-footer .legal-note { margin: 0 auto; }
@@ -1087,7 +1087,7 @@ body.on-home .nav-search { display: none; }
   }
   /* Barra de cerca de la benvinguda més gran al mòbil */
   .welcome-screen .search { max-width: none; width: 100%; }
-  .welcome-screen .search input { font-size: 1.15rem; padding: 0.9rem 0.35rem; }
+  .welcome-screen .search input { font-size: 1.1rem; padding: 0.75rem 0.35rem; }
   /* (la distribució és responsiva; no cal res especial al mòbil) */
   .topbar .search { order: 10; flex-basis: 100%; max-width: none; margin-left: 0; }
   .detail { flex-direction: column; }
