@@ -208,6 +208,14 @@ body.on-home .nav-search { display: none; }
 .welcome-screen .welcome-tagline { margin: 0.8rem auto 1.4rem; font-size: clamp(1rem, 2vw, 1.2rem); }
 .welcome-screen .search { max-width: 540px; }
 .welcome-screen .search input { padding: 1rem 1.6rem; font-size: 1.1rem; }
+
+/* Avís legal del peu de benvinguda */
+.legal-note {
+  margin: 2.2rem auto 0; max-width: 62ch;
+  color: var(--muted); font-size: 0.72rem; line-height: 1.6; opacity: 0.85;
+}
+.legal-note a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.legal-note a:hover { color: var(--amber); }
 .top-actions { display: flex; align-items: center; gap: 0.7rem; }
 
 /* Botons d'autenticació a la navbar */
@@ -407,6 +415,13 @@ body.on-home .nav-search { display: none; }
 }
 .btn-play:hover { background: var(--amber-bright); transform: translateY(-2px); box-shadow: 0 8px 28px var(--amber-glow); }
 .btn-play .play-tri-ic { display: inline-flex; }
+/* Reproductor no disponible (drets no inclosos): gris i no clicable */
+.btn-play.btn-unavailable {
+  background: var(--surface-3); color: var(--muted);
+  border: 1px solid var(--border); cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-play.btn-unavailable:hover { background: var(--surface-3); transform: none; box-shadow: none; color: var(--muted); }
 .btn-arrow .chev, .row-arrow .chev { display: inline-block; vertical-align: -2px; }
 .watch-ico, .win-ico { display: inline-flex; align-items: center; }
 .watch-btn svg, .win-ico svg { display: block; }

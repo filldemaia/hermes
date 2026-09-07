@@ -25,9 +25,12 @@ Canal oficial (el correcte per a aquest cas):
 
   Camps que demana:
     - Nom i cognoms:        [EL TEU NOM]
-    - Empresa:              Hermes (projecte personal) — si tens una
-                            entitat/autònom, posa-ho; sinó "Projecte
-                            personal sense ànim de lucre"
+    - Empresa:              No cal ser cap empresa: com a estudiant amb
+                            un projecte personal, escriu "Projecte
+                            personal sense ànim de lucre". Si mai et
+                            demanen una entitat jurídica, ho pots
+                            plantejar més endavant (autònom), però no
+                            és cap requisit per començar a parlar-hi.
     - Correu electrònic:    [EL TEU CORREU]
     - Motiu de la petició:  el text curt de la secció 2 (a sota)
     - Captcha + acceptar la política de protecció de dades
@@ -70,10 +73,12 @@ distribució legal — sol·licitud del Manual d'ús per a operadors
 
 Benvolgut equip de la CCMA,
 
-Sóc [EL TEU NOM], creador de Hermes (https://filldemaia.cat), una
-plataforma web en català que funciona com un catàleg de pel·lícules i
-sèries originals en català, pensada per respondre una pregunta molt
-senzilla: «què puc veure en català, i on ho puc veure legalment?».
+Sóc [EL TEU NOM], estudiant i creador de Hermes
+(https://filldemaia.cat), un projecte personal i sense ànim de lucre
+fet per amor a la llengua catalana i al país: una plataforma web que
+funciona com un catàleg de pel·lícules i sèries originals en català,
+pensada per respondre una pregunta molt senzilla: «què puc veure en
+català, i on ho puc veure legalment?».
 
 COM FUNCIONA HERMES
 - Catàleg de metadades (TMDb) de pel·lícules i sèries amb idioma
@@ -147,9 +152,10 @@ qualsevol aclariment o per demostrar el projecte.
 - Temps de resposta: no hi ha cap termini publicat. Si en 3-4 setmanes
   no hi ha resposta, escriu via Atenció a l'audiència citant el
   formulari enviat (i la data).
-- Si et demanen una entitat jurídica: un projecte personal pot fer-ho
-  com a persona física; si la CCMA ho requereix, sempre pots plantegar
-  registrar-te com a autònom més endavant. No cal decidir-ho ara.
+- Si et demanen una entitat jurídica: un projecte personal es pot
+  tramitar com a persona física. La CCMA és una corporació pública:
+  el motiu del projecte (amor a la llengua i al país) hi encaixa
+  perfectament; no t'amaguis, escriu-ho tal com és.
 - Quan responguin: demana concretament (a) el Manual en PDF i (b) una
   persona de contacte del departament de distribució/digital. A partir
   d'allà, jo puc implementar la incrustació del reproductor oficial

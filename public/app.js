@@ -36,6 +36,9 @@ const TYPE_LABELS = {
   'series': 'Sèrie'
 };
 
+/** Missatge per als títols que encara no podem reproduir (drets no inclosos). */
+const PLAY_UNAVAILABLE_TIP = 'No podem reproduir aquest contingut: no en tenim els drets. A «On veure-ho» trobaràs les plataformes on veure\'l legalment.';
+
 /** Injecta un "episodi" sintètic quan el títol és reproduïble (contingut lliure amb fitxer). */
 function withPlayableEpisode(title) {
   if (title.playable && (!title.episodes || !title.episodes.length)) {
@@ -454,6 +457,12 @@ function renderWelcome() {
           <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off" enterkeyhint="search">
         </div>
         <button class="btn-reveal" id="revealBtn">Veure més contingut</button>
+        <p class="legal-note">
+          Hermes no allotja ni distribueix contingut protegit: és un catàleg que enllaça
+          la distribució legal de cada títol. Metadades i imatges per cortesia de
+          <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDb</a>.
+          <a href="https://github.com/filldemaia/hermes" target="_blank" rel="noopener noreferrer">Codi font</a> · Llicència MIT.
+        </p>
       </div>
     </section>
   `;
@@ -580,7 +589,7 @@ async function renderHome(titles) {
         </div>
         <p class="hero-synopsis">${escapeHtml((featured.synopsis_ca || featured.synopsis_fallback || '').slice(0, 220))}${(featured.synopsis_ca || featured.synopsis_fallback || '').length > 220 ? '…' : ''}</p>
         <div class="hero-actions">
-          <button class="btn-play" id="heroPlay" data-id="${featured.id}">${ICON_PLAY_SMALL} Reproductor</button>
+          <button class="btn-play ${featured.playable ? '' : 'btn-unavailable'}" id="${featured.playable ? 'heroPlay' : 'heroPlayOff'}" data-id="${featured.id}" ${featured.playable ? '' : `title="${escapeHtml(PLAY_UNAVAILABLE_TIP)}"`}>${ICON_PLAY_SMALL} Reproductor</button>
           <button class="btn-arrow" id="heroDetails" data-id="${featured.id}">Detalls</button>
         </div>
       </div>
@@ -618,8 +627,9 @@ async function renderHome(titles) {
     const title = withPlayableEpisode(await api(`/api/titles/${id}`));
     const playTarget = (title.episodes?.find(ep => !ep.progress || ep.progress.completed !== true) || title.episodes?.[0]);
     if (playTarget) openPlayer(playTarget.id, title);
-    else toast('Aquest contingut encara no és reproduïble', 'error');
+    else toast(PLAY_UNAVAILABLE_TIP, 'error');
   });
+  $('#heroPlayOff')?.addEventListener('click', () => toast(PLAY_UNAVAILABLE_TIP, 'error'));
   $('#heroDetails')?.addEventListener('click', (e) => renderDetail(e.currentTarget.dataset.id));
 
   // Fletxes de filera: mou el scroll horitzontal
@@ -1008,7 +1018,9 @@ async function renderDetail(id, opts) {
           ${(title.synopsis_ca || title.synopsis_fallback) ? `<p class="detail-synopsis">${escapeHtml(title.synopsis_ca || title.synopsis_fallback)}</p>` : ''}
           ${(title.genres && title.genres.length) ? `<div class="genres">${title.genres.map(g => `<span class="genre-tag">${escapeHtml(GENRE_LABELS[g] || g)}</span>`).join('')}</div>` : ''}
           <div class="detail-actions">
-            ${playTarget ? `<button class="btn-play" id="playBtn" data-episode="${playTarget.id}">${ICON_PLAY_SMALL} Reproductor</button>` : ''}
+            ${playTarget
+              ? `<button class="btn-play" id="playBtn" data-episode="${playTarget.id}">${ICON_PLAY_SMALL} Reproductor</button>`
+              : `<button class="btn-play btn-unavailable" id="playBtnOff" title="${escapeHtml(PLAY_UNAVAILABLE_TIP)}">${ICON_PLAY_SMALL} Reproductor</button>`}
             <button class="btn-watch-detail ${state.watch.has(title.id) ? 'saved' : ''}" id="detailWatchBtn" data-watch-detail="${title.id}">
               <span class="win-ico">${state.watch.has(title.id) ? ICON_HEART_FILL : ICON_HEART_EMPTY}</span>
               <span class="win-txt">${state.watch.has(title.id) ? 'A la meva llista' : 'Desa a la meva llista'}</span>
@@ -1034,6 +1046,7 @@ async function renderDetail(id, opts) {
     else setSection('inici');
   };
     $('#playBtn')?.addEventListener('click', (e) => openPlayer(e.currentTarget.dataset.episode, title));
+    $('#playBtnOff')?.addEventListener('click', () => toast(PLAY_UNAVAILABLE_TIP, 'error'));
     $('#detailWatchBtn')?.addEventListener('click', async (e) => {
       const id = e.currentTarget.dataset.watchDetail;
       await toggleWatch(id, null);

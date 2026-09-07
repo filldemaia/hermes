@@ -102,6 +102,12 @@ deploy/
 - Les marques i catàlegs citats (3Cat, FilminCAT, Prime Video, Netflix...)
   pertanyen als seus titulars; els enllaços redirigeixen a les seves plataformes.
 
+## Llicència
+
+El **codi font** es publica sota llicència **MIT** (vegeu [LICENSE](LICENSE)).
+Els continguts del catàleg (metadades, pòsters, obres) queden fora d'aquesta
+llicència i pertanyen als seus respectius titulars.
+
 ## Atribució
 
 Aquest producte fa servir l'API de TMDb però no està avalat ni certificat per TMDb.
