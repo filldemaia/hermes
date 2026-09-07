@@ -904,8 +904,17 @@ body.on-home .nav-search { display: none; }
   .detail { flex-direction: column; }
   .detail-poster { width: 100%; max-width: 220px; }
   .hero { aspect-ratio: 16 / 9; min-height: 220px; max-height: 420px; }
-  .card { width: 140px; }
-  .grid { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); }
+  /* Cartells petits: ~4 per fila tant a les graella com a les fileres */
+  .card { width: 86px; border-radius: 8px; }
+  .card-body { padding: 0.4rem 0.35rem 0.45rem; }
+  .card-title { font-size: 0.68rem; }
+  .card-meta { font-size: 0.6rem; margin-top: 0.1rem; }
+  .card-badges { left: 0.25rem; top: 0.25rem; gap: 0.15rem; }
+  .card-badge { font-size: 0.52rem; padding: 0.06rem 0.35rem; }
+  .watch-btn { width: 24px; height: 24px; top: 0.25rem; right: 0.25rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 0.55rem; }
+  .hscroll { gap: 0.55rem; }
+  .page-title { font-size: 1.3rem; }
 
   /* Barra inferior tipus app */
   .app { padding-bottom: 6rem; }

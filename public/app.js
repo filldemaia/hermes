@@ -1463,7 +1463,7 @@ function openAuth(mode) {
   $('#authPassword').value = '';
   $('#authPassword2').value = '';
   $('#authConfirmHint').textContent = '';
-  $('#authNameHint').classList.remove('auth-hint-error');
+  setAuthFieldHints();
   setPasswordVisible(false);
   $('#authOverlay').classList.remove('hidden');
   setTimeout(() => $('#authName').focus(), 30);
@@ -1489,12 +1489,37 @@ function validateAuthForm() {
 }
 
 function setAuthFieldHints() {
+  // Missatges només quan el camp no compleix (res de text per defecte)
   const name = $('#authName').value.trim();
-  $('#authNameHint').classList.toggle('auth-hint-error', !!name && !USERNAME_RE.test(name));
+  const nameHint = $('#authNameHint');
+  if (name && !USERNAME_RE.test(name)) {
+    nameHint.textContent = "El nom ha de tenir 3-20 caràcters: lletres, números, punt, guió o guió baix";
+    nameHint.classList.add('auth-hint-error');
+  } else {
+    nameHint.textContent = '';
+    nameHint.classList.remove('auth-hint-error');
+  }
+
+  const p1 = $('#authPassword').value;
+  const p1Hint = $('#authPasswordHint');
+  if (p1 && p1.length < 6) {
+    p1Hint.textContent = 'La contrasenya ha de tenir com a mínim 6 caràcters';
+    p1Hint.classList.add('auth-hint-error');
+  } else {
+    p1Hint.textContent = '';
+    p1Hint.classList.remove('auth-hint-error');
+  }
+
   if (authMode === 'signup') {
-    const p1 = $('#authPassword').value;
     const p2 = $('#authPassword2').value;
-    $('#authConfirmHint').textContent = p2 && p1 && p1 !== p2 ? 'No coincideixen' : '';
+    const cHint = $('#authConfirmHint');
+    if (p2 && p1 && p1 !== p2) {
+      cHint.textContent = 'Les contrasenyes no coincideixen';
+      cHint.classList.add('auth-hint-error');
+    } else {
+      cHint.textContent = '';
+      cHint.classList.remove('auth-hint-error');
+    }
   }
 }
 function setSession(id, name) {

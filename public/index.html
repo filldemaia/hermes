@@ -18,7 +18,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=19">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=19">
   <link rel="icon" type="image/png" href="/icon-192.png?v=27">
-  <link rel="stylesheet" href="/style.css?v=39">
+  <link rel="stylesheet" href="/style.css?v=40">
 </head>
 <body>
 
@@ -118,7 +118,7 @@
         <label class="auth-field">
           <span>Nom d'usuari</span>
           <input type="text" id="authName" autocomplete="username" maxlength="20" inputmode="text" spellcheck="false">
-          <small class="auth-hint" id="authNameHint">3–20 caràcters. Lletres, números, punt, guió i guió baix.</small>
+          <small class="auth-hint" id="authNameHint" aria-live="polite"></small>
         </label>
         <label class="auth-field">
           <span>Contrasenya</span>
@@ -128,7 +128,7 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </span>
-          <small class="auth-hint" id="authPasswordHint">Mínim 6 caràcters.</small>
+          <small class="auth-hint" id="authPasswordHint" aria-live="polite"></small>
         </label>
         <label class="auth-field" id="confirmField" hidden>
           <span>Confirma la contrasenya</span>
@@ -221,6 +221,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/app.js?v=37"></script>
+  <script src="/app.js?v=38"></script>
 </body>
 </html>
