@@ -28,9 +28,47 @@ const GENRE_LABELS = {
 
 const TYPE_LABELS = {
   'movie': 'Pel·lícula',
-  'series': 'Sèrie',
-  'anime_movie': 'Pel·lícula d\'anime',
-  'anime_series': 'Sèrie d\'anime'
+  'series': 'Sèrie'
+};
+
+/** Injecta un "episodi" sintètic quan el títol és reproduïble (contingut lliure amb fitxer). */
+function withPlayableEpisode(title) {
+  if (title.playable && (!title.episodes || !title.episodes.length)) {
+    title.episodes = [{
+      id: title.id,
+      title_id: title.id,
+      season_number: 0,
+      episode_number: 0,
+      episode_title: 'Vídeo',
+      file_path: title.file_path,
+      subtitle_path: null,
+      progress: title.progress || null
+    }];
+  }
+  return title;
+}
+
+/** Noms amigables dels proveïdors de streaming. */
+const PROVIDER_LABELS = {
+  'Amazon Prime Video': 'Prime Video',
+  'Amazon Video': 'Prime Video',
+  'Apple TV Store': 'Apple TV',
+  'Apple TV+': 'Apple TV+',
+  'Google Play Movies': 'Google Play',
+  'YouTube Movies': 'YouTube',
+  'Movistar Plus': 'Movistar+',
+  'HBO Max': 'Max',
+  'Netflix': 'Netflix',
+  'Disney Plus': 'Disney+',
+  'Filmin': 'FilminCAT',
+  '3Cat': '3Cat'
+};
+
+const PROVIDER_KIND_LABELS = {
+  'flatrate': 'Subscripció',
+  'free': 'Gratuït',
+  'rent': 'Lloguer',
+  'buy': 'Compra'
 };
 
 function api(path) {
@@ -107,7 +145,7 @@ function continueCard(item) {
       </div>
       <div class="card-body">
         <div class="card-title">${escapeHtml(item.original_title)}</div>
-        <div class="card-meta">${item.type === 'movie' ? 'Pel·lícula' : `S${String(item.season_number||0).padStart(2,'0')} E${String(item.episode_number||0).padStart(2,'0')}`}</div>
+        <div class="card-meta">${item.type === 'movie' ? 'Pel·lícula' : 'Sèrie'}</div>
       </div>
     </div>
   `;
@@ -118,15 +156,19 @@ function posterCard(t) {
     ? `<img class="card-poster" src="${escapeHtml(t.poster_url)}" alt="${escapeHtml(t.original_title)}" loading="lazy">`
     : `<div class="card-poster placeholder">${ICON_POSTER_PLACEHOLDER}</div>`;
   const saved = state.watch.has(t.id);
+  const badges = [];
+  if (t.is_anime) badges.push('<span class="card-badge badge-anime">Anime</span>');
+  if (t.playable) badges.push('<span class="card-badge badge-free">Lliure</span>');
   return `
     <div class="card" data-id="${t.id}">
       <button class="watch-btn ${saved ? 'saved' : ''}" data-watch="${t.id}" title="${saved ? 'Treure de la meva llista' : 'Desa a la meva llista'}">
         <span class="watch-ico">${saved ? ICON_HEART_FILL : ICON_HEART_EMPTY}</span>
       </button>
       ${poster}
+      ${badges.length ? `<div class="card-badges">${badges.join('')}</div>` : ''}
       <div class="card-body">
         <div class="card-title">${escapeHtml(t.catalan_title || t.original_title)}</div>
-        <div class="card-meta">${escapeHtml(t.year || '')}${t.episode_count ? ` · ${t.episode_count} episodis` : ''}</div>
+        <div class="card-meta">${escapeHtml(t.year || '')}${t.original_language === 'ca' ? ' · Original en català' : (t.has_ca ? ' · Doblat en català' : '')}</div>
       </div>
     </div>
   `;
@@ -179,9 +221,7 @@ async function renderLibrary() {
     'cataleg': 'Catàleg',
     'pel·lícules': 'Pel·lícules',
     'sèries': 'Sèries',
-    'anime': 'Anime',
-    'continuar': 'Continuar veient',
-    'revisar': 'Per revisar'
+    'continuar': 'Continuar veient'
   }[state.section];
 
   if (state.section === 'inici') { renderWelcome(); return; }
@@ -197,23 +237,8 @@ async function renderLibrary() {
       await renderContinueWatching();
       return;
     }
-    if (state.section === 'revisar') {
-      await renderReview();
-      return;
-    }
 
-    let data;
-    if (state.section === 'anime') {
-      // Anime engloba anime_movie i anime_series
-      const [movies, series] = await Promise.all([
-        api(`/api/titles?${buildQuery({ type: 'anime_movie', limit: 120 })}`),
-        api(`/api/titles?${buildQuery({ type: 'anime_series', limit: 120 })}`)
-      ]);
-      const combined = [...movies.data, ...series.data];
-      data = { data: combined, total: combined.length, page: 1, totalPages: 1 };
-    } else {
-      data = await api(`/api/titles?${buildQuery()}`);
-    }
+    const data = await api(`/api/titles?${buildQuery()}`);
 
     if (state.section === 'cataleg') {
       // Catàleg: sense cerca → fileres de contingut; amb cerca → graella de resultats
@@ -244,8 +269,7 @@ async function renderLibrary() {
 function groupRows(titles) {
   return [
     { key: 'pel·lícules', label: 'Pel·lícules', list: titles.filter(t => t.type === 'movie') },
-    { key: 'sèries', label: 'Sèries', list: titles.filter(t => t.type === 'series') },
-    { key: 'anime', label: 'Anime', list: titles.filter(t => t.type === 'anime_movie' || t.type === 'anime_series') }
+    { key: 'sèries', label: 'Sèries', list: titles.filter(t => t.type === 'series') }
   ].filter(r => r.list.length);
 }
 
@@ -255,7 +279,7 @@ function renderWelcome() {
   content.innerHTML = `
     <section class="welcome welcome-revealed welcome-screen">
       <div class="welcome-inner">
-        <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=29" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=29" alt="" aria-hidden="true"></span>
+        <span class="welcome-logo"><img class="caduceus-lg" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">HERMES<img class="caduceus-lg caduceus-lg-trailing" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></span>
         <p class="welcome-tagline">Pel·lícules i sèries en català, al teu ritme.</p>
         <div class="search">
           <input type="search" id="searchInput" placeholder="Cerca per títol..." autocomplete="off">
@@ -390,9 +414,10 @@ async function renderHome(titles) {
 
   $('#heroPlay')?.addEventListener('click', async (e) => {
     const id = e.currentTarget.dataset.id;
-    const title = await api(`/api/titles/${id}`);
+    const title = withPlayableEpisode(await api(`/api/titles/${id}`));
     const playTarget = (title.episodes?.find(ep => !ep.progress || ep.progress.completed !== true) || title.episodes?.[0]);
     if (playTarget) openPlayer(playTarget.id, title);
+    else toast('Aquest contingut encara no és reproduïble', 'error');
   });
   $('#heroDetails')?.addEventListener('click', (e) => renderDetail(e.currentTarget.dataset.id));
 
@@ -453,12 +478,19 @@ async function renderContinueWatching() {
     list.className = 'episode-list';
     list.innerHTML = items.map(it => `
       <div class="episode-item" data-episode="${it.episode_id}" data-titleid="${it.title_id}">
-        <span class="episode-num">${it.type === 'movie' ? 'Pel·lícula' : `S${String(it.season_number || 0).padStart(2,'0')} E${String(it.episode_number || 0).padStart(2,'0')}`}</span>
-        <span class="episode-title"><strong>${escapeHtml(it.original_title)}</strong>${it.episode_title ? ' — ' + escapeHtml(it.episode_title) : ''}</span>
+        <span class="episode-num">${it.type === 'movie' ? 'Pel·lícula' : 'Sèrie'}</span>
+        <span class="episode-title"><strong>${escapeHtml(it.catalan_title || it.original_title)}</strong></span>
         <span class="episode-progress">${formatSeconds(it.position_seconds)}</span>
       </div>
     `).join('');
     content.appendChild(list);
+    list.querySelectorAll('.episode-item[data-episode]').forEach(el => {
+      el.onclick = async () => {
+        const title = withPlayableEpisode(await api(`/api/titles/${el.dataset.titleid}`));
+        if (title.episodes?.length) openPlayer(el.dataset.episode, title);
+        else toast('Aquest contingut encara no és reproduïble', 'error');
+      };
+    });
   } catch (e) {
     content.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`;
   }
@@ -491,201 +523,34 @@ async function renderMyList() {
   }
 }
 
-async function renderReview() {
-  const content = $('#content');
-
-  try {
-    const [unresolved, quarantine] = await Promise.all([
-      api('/api/metadata/unresolved').catch(() => []),
-      api('/api/quarantine').catch(() => [])
-    ]);
-
-    let html = '';
-
-    // ——— Gestió de perfils (RF-13) ———
-    try {
-      const profiles = await api('/api/profiles');
-      html += `<h2 class="review-title">Perfils (${profiles.length})</h2>`;
-      html += `<div class="profile-manager">`;
-      for (const p of profiles) {
-        html += `
-          <div class="profile-row data-review-profile" data-profile-id="${p.id}">
-            <span class="profile-name">${escapeHtml(p.display_name)}${p.current ? ' <em>(actual)</em>' : ''}</span>
-            <span class="profile-actions">
-              <button class="btn btn-mini" data-profile-action="switch" data-profile-id="${p.id}">Usar</button>
-              ${p.current ? '' : `<button class="btn btn-mini btn-danger" data-profile-action="delete" data-profile-id="${p.id}">Esborrar</button>`}
-            </span>
-          </div>`;
-      }
-      html += `
-        <div class="profile-create">
-          <input type="text" id="newProfileName" placeholder="Nom del perfil...">
-          <button class="btn btn-mini" id="createProfileBtn">Crear perfil</button>
-        </div>`;
-      html += `</div>`;
-    } catch (e) {
-      /* perfils no disponibles */
-    }
-
-    // ——— Metadades sense resoldre ———
-    html += `<h2 class="review-title">Metadades per confirmar (${unresolved.length})</h2>`;
-    if (!unresolved.length) {
-      html += `<div class="empty">No hi ha títols pendents de confirmar metadades.</div>`;
-    } else {
-      html += `<div class="episode-list">`;
-      for (const t of unresolved) {
-        const label = TYPE_LABELS[t.type] || t.type;
-        html += `
-          <div class="episode-item review-item" data-review-id="${t.id}">
-            <span class="episode-num">${escapeHtml(label)}</span>
-            <span class="episode-title"><strong>${escapeHtml(t.catalan_title || t.original_title)}</strong>${t.year ? ' (' + escapeHtml(t.year) + ')' : ''}</span>
-            <span class="episode-progress" data-action="candidates">Obtenir candidats…</span>
-          </div>
-          <div class="review-candidates" id="candidates-${t.id}" hidden></div>`;
-      }
-      html += `</div>`;
-    }
-
-    // ——— Quarantena ———
-    html += `<h2 class="review-title">Quarantena (${quarantine.length})</h2>`;
-    if (!quarantine.length) {
-      html += `<div class="empty">No hi ha fitxers en quarantena.</div>`;
-    } else {
-      html += `<div class="episode-list">`;
-      for (const q of quarantine) {
-        html += `
-          <div class="episode-item">
-            <span class="episode-num">${ICON_BLOCKED}</span>
-            <span class="episode-title"><code>${escapeHtml(q.path)}</code><div class="quarantine-reason">${escapeHtml(q.reason)}</div></span>
-            <span class="episode-progress">${escapeHtml((q.created_at || '').slice(0, 16))}</span>
-          </div>`;
-      }
-      html += `</div>`;
-    }
-
-    content.innerHTML = html;
-
-    // Delegació de clics: carregar candidats d'un títol
-    content.querySelectorAll('.review-item[data-action="candidates"], .review-item').forEach(el => {
-      el.querySelector('[data-action="candidates"]').onclick = (e) => {
-        e.stopPropagation();
-        loadCandidates(el.dataset.reviewId, el);
-      };
-    });
-  } catch (e) {
-    console.error(e);
-    content.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-async function loadCandidates(titleId, itemEl, initialSearch) {
-  const box = document.getElementById(`candidates-${titleId}`);
-  if (!box) return;
-  const label = itemEl.querySelector('[data-action="candidates"]');
-
-  box.hidden = false;
-  box.innerHTML = `
-    <div class="candidate-search">
-      <input type="text" id="candSearch-${titleId}" placeholder="Cerca per títol oficial (p. ex. en castellà/anglès)…" value="${escapeHtml(initialSearch || '')}">
-      <button class="btn btn-sm" id="candSearchBtn-${titleId}">Cercar</button>
-    </div>
-    <div class="loading">Buscant candidats…</div>`;
-
-  const doSearch = () => {
-    const term = document.getElementById(`candSearch-${titleId}`).value.trim();
-    loadCandidates(titleId, itemEl, term, true);
-  };
-
-  document.getElementById(`candSearchBtn-${titleId}`).onclick = (e) => { e.stopPropagation(); doSearch(); };
-
-  try {
-    const params = initialSearch ? `?q=${encodeURIComponent(initialSearch)}` : '';
-    const candidates = await api(`/api/metadata/candidates/${titleId}${params}`);
-    if (!candidates.length) {
-      box.innerHTML = `
-        <div class="candidate-search">
-          <input type="text" id="candSearch-${titleId}" placeholder="Cerca per títol oficial…" value="${escapeHtml(initialSearch || '')}">
-          <button class="btn btn-sm" id="candSearchBtn-${titleId}">Cercar</button>
-        </div>
-        <div class="empty">No s'han trobat candidats. Proveu de cercar pel títol oficial.</div>`;
-      document.getElementById(`candSearchBtn-${titleId}`).onclick = () => {
-        const term = document.getElementById(`candSearch-${titleId}`).value.trim();
-        loadCandidates(titleId, itemEl, term, true);
-      };
-      return;
-    }
-
-    box.innerHTML = `
-      <div class="candidate-search">
-        <input type="text" id="candSearch-${titleId}" placeholder="Cerca per títol oficial…" value="${escapeHtml(initialSearch || '')}">
-        <button class="btn btn-sm" id="candSearchBtn-${titleId}">Cercar</button>
-      </div>
-      ${candidates.map((c, i) => `
-      <div class="candidate-row">
-        ${c.posterUrl ? `<img class="candidate-poster" src="${escapeHtml(c.posterUrl)}" alt="">` : `<div class="candidate-poster placeholder"></div>`}
-        <div class="candidate-info">
-          <div class="candidate-title"><strong>${escapeHtml(c.title)}</strong> (${c.year ? escapeHtml(c.year) : 's/d'})</div>
-          <div class="candidate-meta">${escapeHtml(c.externalSource === 'tmdb' ? 'TMDb' : 'AniList')} · confiança ${(c.confidence * 100).toFixed(0)}%${c.ambiguous ? ` · <span class="warn-tag">${ICON_WARN} ambigü</span>` : ''}</div>
-          ${c.genres && c.genres.length ? `<div class="genres">${c.genres.map(g => `<span class="genre-tag">${escapeHtml(g)}</span>`).join('')}</div>` : ''}
-        </div>
-        <button class="btn btn-sm" data-confirm="${c.externalId}" data-source="${c.externalSource}" data-title="${escapeHtml(c.title)}" data-year="${c.year || ''}" data-synopsis="${escapeHtml(c.synopsis || '')}" data-poster="${escapeHtml(c.posterUrl || '')}" data-genres="${escapeHtml(JSON.stringify(c.genres || []))}">Confirmar</button>
-      </div>
-    `).join('')}`;
-
-    document.getElementById(`candSearchBtn-${titleId}`).onclick = () => {
-      const term = document.getElementById(`candSearch-${titleId}`).value.trim();
-      loadCandidates(titleId, itemEl, term, true);
-    };
-    box.querySelectorAll('[data-confirm]').forEach(btn => {
-      btn.onclick = () => confirmMetadata(titleId, btn);
-    });
-  } catch (e) {
-    box.innerHTML = `<div class="empty">Error obtenint candidats: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-async function confirmMetadata(titleId, btn) {
-  const payload = {
-    titleId,
-    externalId: btn.dataset.confirm,
-    externalSource: btn.dataset.source,
-    title: btn.dataset.title,
-    year: btn.dataset.year ? parseInt(btn.dataset.year, 10) : null,
-    synopsis: btn.dataset.synopsis,
-    posterUrl: btn.dataset.poster,
-    genres: JSON.parse(btn.dataset.genres || '[]')
-  };
-
-  try {
-    const resp = await fetch('/api/metadata/confirm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...requestHeaders() },
-      body: JSON.stringify(payload)
-    });
-    if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
-    toast('Metadades confirmades');
-    renderReview();
-  } catch (e) {
-    toast(`Error: ${e.message}`);
-  }
-}
-
 async function renderDetail(id, opts) {
   opts = opts || {};
   if (opts.navigate !== false) navigateTo(`/detall/${encodeURIComponent(id)}`);
   const content = $('#content');
   content.innerHTML = skeletonDetail();
   try {
-    const title = await api(`/api/titles/${id}`);
+    const title = withPlayableEpisode(await api(`/api/titles/${id}`));
     const typeLabel = TYPE_LABELS[title.type] || title.type;
     const poster = title.poster_url
       ? `<img class="detail-poster" src="${escapeHtml(title.poster_url)}" alt="">`
       : `<div class="detail-poster placeholder" style="aspect-ratio:2/3;background:#1f1f33;display:flex;align-items:center;justify-content:center;"><div style="width:28%;color:#4a4a6a;">${ICON_POSTER_PLACEHOLDER.replace('<svg class="poster-ph" width="40" height="40"', '<svg class="poster-ph" width="100%" height="auto"')}</div></div>`;
 
-    const singleMovie = title.type === 'movie' || title.type === 'anime_movie';
-    const playTarget = singleMovie && title.episodes?.[0]
-      ? title.episodes[0]
-      : (title.episodes?.find(e => !e.progress || e.progress.completed !== true) || title.episodes?.[0]);
+    const caInfo = title.original_language === 'ca'
+      ? '<span class="meta-pill pill-ca">Original en català</span>'
+      : (title.has_ca ? '<span class="meta-pill pill-ca">Doblat/subtitulat en català</span>' : '');
+    const playTarget = title.episodes?.[0];
+
+    // Bloc "On veure-ho": proveïdors amb àudio/subtítols en català (enllaç extern)
+    const providers = title.providers || [];
+    const providerRows = providers.map(p => {
+      const name = PROVIDER_LABELS[p.name] || p.name;
+      const kind = PROVIDER_KIND_LABELS[p.kind] || p.kind;
+      return `<a class="episode-item provider-item" href="${escapeHtml(p.url || '#')}" target="_blank" rel="noopener noreferrer">
+        <span class="episode-num">${escapeHtml(name)}</span>
+        <span class="episode-title">${escapeHtml(kind)}</span>
+        <span class="episode-progress">Obre-hi ${ICON_CHEV_R}</span>
+      </a>`;
+    }).join('');
 
     content.innerHTML = `
       <button class="btn-arrow" id="backBtn" style="margin-top:1rem;">${ICON_CHEV_L} Torna</button>
@@ -696,6 +561,7 @@ async function renderDetail(id, opts) {
           <h1>${escapeHtml(title.catalan_title || title.original_title)}</h1>
           <div class="detail-meta">
             <span class="meta-pill">${escapeHtml(typeLabel)}</span>
+            ${title.is_anime ? '<span class="meta-pill pill-anime">Anime</span>' : ''}
             ${title.year ? `<span class="meta-pill">${escapeHtml(title.year)}</span>` : ''}
             ${title.original_title !== (title.catalan_title || title.original_title) ? `<span>${escapeHtml(title.original_title)}</span>` : ''}
           </div>
@@ -708,23 +574,14 @@ async function renderDetail(id, opts) {
               <span class="win-txt">${state.watch.has(title.id) ? 'A la meva llista' : 'Desa a la meva llista'}</span>
             </button>
           </div>
+          ${caInfo ? `<p class="detail-ca-info">${caInfo}</p>` : ''}
         </div>
       </div>
+      ${providers.length ? `
       <div class="episodes">
-        <h2>${singleMovie ? 'Versions disponibles' : 'Episodis'}</h2>
-        <div class="episode-list">
-          ${title.episodes.map(ep => {
-            const epPos = ep.progress ? ep.progress.position_seconds : 0;
-            const numLabel = singleMovie ? (ep.episode_title || (ep.file_path ? ep.file_path.split('/').pop() : 'Vídeo')) : `S${String(ep.season_number||0).padStart(2,'0')} E${String(ep.episode_number||0).padStart(2,'0')}`;
-            return `
-              <div class="episode-item" data-episode="${ep.id}">
-                <span class="episode-num">${singleMovie ? ICON_PLAY_SMALL : escapeHtml(numLabel)}</span>
-                <span class="episode-title">${singleMovie ? escapeHtml(numLabel) : escapeHtml(ep.episode_title || 'Episodi')}</span>
-                ${epPos ? `<span class="episode-progress">${formatSeconds(epPos)}${ep.progress.completed ? ' · vist' : ''}</span>` : ''}
-              </div>`;
-          }).join('')}
-        </div>
-      </div>
+        <h2>On veure-ho en català</h2>
+        <div class="episode-list">${providerRows}</div>
+      </div>` : ''}
     `;
 
     $('#backBtn').onclick = () => {
@@ -741,9 +598,6 @@ async function renderDetail(id, opts) {
       e.currentTarget.querySelector('.win-ico').innerHTML = saved ? ICON_HEART_FILL : ICON_HEART_EMPTY;
       e.currentTarget.querySelector('.win-txt').textContent = saved ? 'A la meva llista' : 'Desa a la meva llista';
     });
-    document.querySelectorAll('.episode-item[data-episode]').forEach(el => {
-      el.onclick = () => openPlayer(el.dataset.episode, title);
-    });
   } catch (e) {
     content.innerHTML = `<div class="empty">Error carregant el títol: ${escapeHtml(e.message)}</div>`;
   }
@@ -755,14 +609,16 @@ async function openPlayerDirect(episodeId) {
     const items = await api('/api/continue-watching');
     const item = items.find(x => x.episode_id === episodeId);
     if (item) {
-      const title = await api(`/api/titles/${item.title_id}`);
-      openPlayer(episodeId, title);
-      return;
+      const title = withPlayableEpisode(await api(`/api/titles/${item.title_id}`));
+      if (title.episodes?.length) {
+        openPlayer(episodeId, title);
+        return;
+      }
     }
   } catch (e) {
     console.error('Error obrint episodi:', e);
   }
-  // Episodi no trobat (per exemple en recarregar una URL directa)
+  // Episodi no trobat o no reproduïble (per exemple en recarregar una URL directa)
   if (location.pathname.startsWith('/reproductor/')) navigateTo('/');
 }
 
@@ -1022,7 +878,7 @@ async function openPlayer(episodeId, title) {
   const overlay = $('#playerOverlay');
   const video = $('#videoElement');
   const ep = title.episodes.find(x => x.id === episodeId);
-  const isMovie = title.type === 'movie' || title.type === 'anime_movie';
+  const isMovie = title.type === 'movie';
   $('#playerTitle').textContent = `${title.catalan_title || title.original_title}${ep && !isMovie && ep.episode_title ? ' — ' + ep.episode_title : ''}`;
 
   // Estat intern del reproductor actual
@@ -1564,9 +1420,7 @@ const SECTION_ROUTES = {
   'cataleg': '/cataleg',
   'pel·lícules': '/pelicules',
   'sèries': '/series',
-  'anime': '/anime',
   'continuar': '/continuar',
-  'revisar': '/revisar',
   'meva-llista': '/meva-llista'
 };
 const ROUTE_SECTIONS = Object.fromEntries(Object.entries(SECTION_ROUTES).map(([k, v]) => [v, k]));
@@ -1609,11 +1463,10 @@ function setSection(section, opts) {
     // A l'Inici no hi ha cerca: netegem qualsevol text pendent
     state.search = '';
   }
-  if (section !== 'inici' && section !== 'cataleg' && section !== 'continuar' && section !== 'revisar' && section !== 'meva-llista') {
+  if (section !== 'inici' && section !== 'cataleg' && section !== 'continuar' && section !== 'meva-llista') {
     // Actualitzar el filtre de tipus segons la secció
     if (section === 'pel·lícules') { state.type = 'movie'; }
     else if (section === 'sèries') { state.type = 'series'; }
-    else if (section === 'anime') { state.type = ''; }
   } else {
     state.type = '';
   }
