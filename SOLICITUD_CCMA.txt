@@ -1,0 +1,156 @@
+════════════════════════════════════════════════════════════════════
+ SOL·LICITUD A LA CCMA / 3CAT — PROJECTE HERMES (filldemaia.cat)
+════════════════════════════════════════════════════════════════════
+
+Aquest document conté:
+  1) ON i COM enviar la sol·licitud
+  2) Text curt per al camp "Motiu de la petició" del formulari
+  3) Text llarg (versió completa, per correu o si et demanen més detalls)
+  4) Consells pràctics i què esperar
+
+Abans d'enviar: substitueix [EL TEU NOM], [EL TEU CORREU] i [TELÈFON]
+pels teus dades. Si tens el projecte presentable, revisa que
+https://filldemaia.cat funcioni bé: el primer que faran és mirar-lo.
+
+
+────────────────────────────────────────────────────────────────────
+1) ON I COM ENVIAR-HO
+────────────────────────────────────────────────────────────────────
+
+Canal oficial (el correcte per a aquest cas):
+
+  Formulari «Manual d'ús per a operadors de plataformes de distribució
+  de vídeo» de la CCMA:
+  https://www.3cat.cat/corporatiu/ca/manual-operadors-plataformes-distribucio-video/
+
+  Camps que demana:
+    - Nom i cognoms:        [EL TEU NOM]
+    - Empresa:              Hermes (projecte personal) — si tens una
+                            entitat/autònom, posa-ho; sinó "Projecte
+                            personal sense ànim de lucre"
+    - Correu electrònic:    [EL TEU CORREU]
+    - Motiu de la petició:  el text curt de la secció 2 (a sota)
+    - Captcha + acceptar la política de protecció de dades
+
+Canal complementari (opcional, per reforçar):
+
+  La CCMA també té un canal de «Presentació de projectes» per als
+  mitjans: https://www.3cat.cat/corporatiu/transparencia/contractacio/
+  (apartat "Presentació de projectes audiovisuals per als mitjans").
+  No és exactament el mateix cas (és més per a productors de contingut),
+  però si no responen al formulari d'operadors en 3-4 setmanes, pots
+  presentar Hermes per allà també o escriure via Atenció a l'audiència:
+  https://www.3cat.cat/atencio/
+
+Recomanació: comença NOMÉS amb el formulari d'operadors (és el canal
+exacte per a plataformes de distribució). Guarda aquesta segona via per
+si no tens resposta.
+
+
+────────────────────────────────────────────────────────────────────
+2) TEXT CURT — camp «Motiu de la petició» del formulari
+────────────────────────────────────────────────────────────────────
+
+Sóc el creador de Hermes (https://filldemaia.cat), un catàleg web en
+català de pel·lícules i sèries originals doblades o produïdes en
+català, que orienta l'usuari sobre on veure cada contingut legalment
+(3Cat, FilminCAT, plataformes de subscripció/lloguer). No distribueix
+ni allotja cap obra protegida. Demano accés al Manual d'ús per a
+operadors per estudiar una col·laboració: metadades oficials del
+catàleg del 3Cat i, si escau, la incrustació del reproductor oficial
+per al contingut de producció pròpia de la CCMA.
+
+
+────────────────────────────────────────────────────────────────────
+3) TEXT LLARG — versió completa (per a correu o resposta del formulari)
+────────────────────────────────────────────────────────────────────
+
+Assumpte: Hermes (filldemaia.cat) — catàleg en català amb enllaç a la
+distribució legal — sol·licitud del Manual d'ús per a operadors
+
+Benvolgut equip de la CCMA,
+
+Sóc [EL TEU NOM], creador de Hermes (https://filldemaia.cat), una
+plataforma web en català que funciona com un catàleg de pel·lícules i
+sèries originals en català, pensada per respondre una pregunta molt
+senzilla: «què puc veure en català, i on ho puc veure legalment?».
+
+COM FUNCIONA HERMES
+- Catàleg de metadades (TMDb) de pel·lícules i sèries amb idioma
+  original català, amb títols, sinopsi i pòsters en català.
+- Per a cada títol, un bloc «On veure-ho» amb enllaços a la
+  distribució legal: 3Cat (quan el contingut hi és disponible
+  gratuïtament), FilminCAT i altres plataformes.
+- La plataforma NO allotja ni distribueix cap obra protegida per drets
+  d'autor: només enllaça. La reproducció integrada queda reservada a
+  contingut de drets lliures.
+- El codi font és públic i auditible: https://github.com/filldemaia/hermes
+
+QUÈ DEMANO
+1. Accedir al «Manual d'ús per a operadors de plataformes de
+   distribució de vídeo» per conèixer les condicions tècniques i
+   legals que la CCMA estableix per a tercers.
+2. Explorar una col·laboració amb la CCMA en dues línies:
+   a) Metadades oficials: accés al catàleg del 3Cat perquè la
+      correspondència entre el nostre catàleg i el contingut
+      disponible al 3Cat sigui oficial i sempre al dia (ara la fem per
+      concordança de títols).
+   b) Reproductor oficial: la possibilitat d'incrustar el reproductor
+      oficial del 3Cat per als continguts de PRODUCCIÓ PRÒPIA de la
+      CCMA (sèries i programes com Merli, Plats bruts, Jo mai mai...),
+      respectant totes les condicions del Manual: geo-bloc,
+      mesurament d'audiències, publicitat i marques del reproductor.
+      El contingut llicenciat a tercers quedaria sempre com a enllaç
+      cap al 3Cat, mai reproduït fora de la plataforma oficial.
+
+PER QUÈ POT INTERESSAR A LA CCMA
+- Hermes és una finestra més cap al contingut en català, alineada amb
+  la missió de la CCMA de difusió de la llengua i la cultura.
+- Tota reproducció es faria amb el reproductor oficial: les
+  audiències es mesurarien al sistema de la CCMA i el contingut
+  mantindria les seves condicions de difusió.
+- És un projecte 100% legal: catàleg + enllaços, cap redistribució.
+
+COMPROMISSOS
+- No extreure ni redistribuir fluxos: l'usuari sempre consumeix el
+  contingut des del servei oficial de la CCMA.
+- Respectar els drets de tercers: cap contingut llicenciat fora del
+  reproductor oficial.
+- Aplicar les condicions tècniques del Manual (geo-bloc, marques,
+  mesurament) tal com la CCMA determini.
+- Estic obert a signar els acords o condicions que calguin.
+
+CONTACTE
+[NEL TEU NOM]
+Correu: [EL TEU CORREU]
+Telèfon: [TELÈFON] (opcional)
+Web: https://filldemaia.cat
+Codi: https://github.com/filldemaia/hermes
+
+Moltes gràcies pel vostre temps. Quedo a la vostra disposició per
+qualsevol aclariment o per demostrar el projecte.
+
+[EL TEU NOM]
+
+
+────────────────────────────────────────────────────────────────────
+4) CONSELLS PRÀCTICS
+────────────────────────────────────────────────────────────────────
+
+- Abans d'enviar: revisa que la web funcioni bé al mòbil i a PC.
+  Serà la teva carta de presentació. Tenir el catàleg carregat i la
+  pàgina d'una sèrie coneguda (p. ex. Merli) amb el botó «3Cat ·
+  Gratuït» ajuda molt: mostra la idea en 10 segons.
+- Si el formulari té límit de caràcters al motiu, envia el text curt i
+  ofereix ampliar: «Puc enviar una descripció completa si em doneu
+  una adreça de contacte.»
+- Temps de resposta: no hi ha cap termini publicat. Si en 3-4 setmanes
+  no hi ha resposta, escriu via Atenció a l'audiència citant el
+  formulari enviat (i la data).
+- Si et demanen una entitat jurídica: un projecte personal pot fer-ho
+  com a persona física; si la CCMA ho requereix, sempre pots plantegar
+  registrar-te com a autònom més endavant. No cal decidir-ho ara.
+- Quan responguin: demana concretament (a) el Manual en PDF i (b) una
+  persona de contacte del departament de distribució/digital. A partir
+  d'allà, jo puc implementar la incrustació del reproductor oficial
+  quan tinguin el vist-i-plau.
