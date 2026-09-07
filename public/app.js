@@ -468,77 +468,125 @@ function renderWelcome() {
     </section>
   `;
 
-  // ── Cerca en viu a pantalla completa (PC i mòbil): resultats sense navegar ──
+  // ── Cerca de la benvinguda ──
+  // Mòbil: vista a pantalla completa amb la barra a dalt de tot.
+  // PC: els resultats surten en un desplegable sota la barra (el logo queda al seu lloc).
   {
-    content.insertAdjacentHTML('beforeend', `
-      <div class="search-live hidden" id="searchLive">
-        <div class="search-live-bar">
-          <input type="search" id="searchLiveInput" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." autocomplete="off" enterkeyhint="search">
-          <button class="search-live-close" id="searchLiveClose" aria-label="Tanca la cerca">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+    const searchItemHtml = (t) => `
+      <button class="search-live-item" data-id="${t.id}">
+        ${t.poster_url
+          ? `<img src="${escapeHtml(t.poster_url)}" alt="" loading="lazy">`
+          : '<span class="sl-ph"></span>'}
+        <span class="sl-info">
+          <span class="sl-title">${escapeHtml(t.catalan_title || t.original_title)}</span>
+          <span class="sl-meta">${t.year ? escapeHtml(t.year) + ' · ' : ''}${t.type === 'movie' ? 'Pel·lícula' : 'Sèrie'}</span>
+        </span>
+      </button>`;
+
+    const bindSearchItems = (container, onClose) => {
+      container.querySelectorAll('.search-live-item').forEach(el => {
+        el.onclick = () => { onClose(); renderDetail(el.dataset.id); };
+      });
+    };
+
+    const searchQueryUrl = (q) =>
+      `/api/titles?q=${encodeURIComponent(q)}&sort=popularity${showAnimeEnabled() ? '' : '&anime=0'}`;
+
+    if (isMobile()) {
+      content.insertAdjacentHTML('beforeend', `
+        <div class="search-live hidden" id="searchLive">
+          <div class="search-live-bar">
+            <input type="search" id="searchLiveInput" placeholder="Cerca una pel·lícula, sèrie o programa emès en català..." autocomplete="off" enterkeyhint="search">
+            <button class="search-live-close" id="searchLiveClose" aria-label="Tanca la cerca">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="search-live-results" id="searchLiveResults"></div>
         </div>
-        <div class="search-live-results" id="searchLiveResults"></div>
-      </div>
-    `);
+      `);
 
-    const liveWrap = $('#searchLive');
-    const liveInput = $('#searchLiveInput');
-    const resultsEl = $('#searchLiveResults');
-    let liveTimer;
-    let liveSeq = 0;
+      const liveWrap = $('#searchLive');
+      const liveInput = $('#searchLiveInput');
+      const resultsEl = $('#searchLiveResults');
+      let liveTimer, liveSeq = 0;
 
-    const closeSearchLive = () => {
-      liveWrap.classList.add('hidden');
-      resultsEl.innerHTML = '';
-    };
+      const closeSearchLive = () => {
+        liveWrap.classList.add('hidden');
+        resultsEl.innerHTML = '';
+      };
 
-    const runLiveSearch = async () => {
-      const q = liveInput.value.trim();
-      const seq = ++liveSeq;
-      if (!q) { resultsEl.innerHTML = ''; return; }
-      try {
-        const d = await api(`/api/titles?q=${encodeURIComponent(q)}&limit=14&sort=popularity${showAnimeEnabled() ? '' : '&anime=0'}`);
-        if (seq !== liveSeq) return; // ja hi ha una cerca més recent
-        if (!d.data.length) {
-          resultsEl.innerHTML = `<div class="search-live-empty">Cap resultat per «${escapeHtml(q)}»</div>`;
-          return;
-        }
-        resultsEl.innerHTML = d.data.map(t => `
-          <button class="search-live-item" data-id="${t.id}">
-            ${t.poster_url
-              ? `<img src="${escapeHtml(t.poster_url)}" alt="" loading="lazy">`
-              : '<span class="sl-ph"></span>'}
-            <span class="sl-info">
-              <span class="sl-title">${escapeHtml(t.catalan_title || t.original_title)}</span>
-              <span class="sl-meta">${t.year ? escapeHtml(t.year) + ' · ' : ''}${t.type === 'movie' ? 'Pel·lícula' : 'Sèrie'}</span>
-            </span>
-          </button>`).join('');
-        resultsEl.querySelectorAll('.search-live-item').forEach(el => {
-          el.onclick = () => { closeSearchLive(); renderDetail(el.dataset.id); };
-        });
-      } catch { /* xarxa: no res, l'usuari seguirà escrivint */ }
-    };
+      const runLiveSearch = async () => {
+        const q = liveInput.value.trim();
+        const seq = ++liveSeq;
+        if (!q) { resultsEl.innerHTML = ''; return; }
+        try {
+          const d = await api(`${searchQueryUrl(q)}&limit=14`);
+          if (seq !== liveSeq) return;
+          resultsEl.innerHTML = d.data.length
+            ? d.data.map(searchItemHtml).join('')
+            : `<div class="search-live-empty">Cap resultat per «${escapeHtml(q)}»</div>`;
+          bindSearchItems(resultsEl, closeSearchLive);
+        } catch { /* xarxa: l'usuari seguirà escrivint */ }
+      };
 
-    // Tocar la barra de la benvinguda → obre la cerca a pantalla completa
-    $('#searchInput').addEventListener('focus', () => {
-      $('#searchInput').blur(); // aquest input és només el gallet
-      liveWrap.classList.remove('hidden');
-      liveInput.value = $('#searchInput').value;
-      liveInput.focus();
-    });
-    liveInput.addEventListener('input', () => {
-      clearTimeout(liveTimer);
-      liveTimer = setTimeout(runLiveSearch, 220);
-    });
-    liveInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeSearchLive(); return; }
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      const q = liveInput.value.trim();
-      if (q) { closeSearchLive(); state.search = q; setSection('cataleg', { keepSearch: true }); }
-    });
-    $('#searchLiveClose').addEventListener('click', closeSearchLive);
+      // Tocar la barra de la benvinguda → cerca a pantalla completa
+      $('#searchInput').addEventListener('focus', () => {
+        $('#searchInput').blur(); // aquest input és només el gallet
+        liveWrap.classList.remove('hidden');
+        liveInput.value = $('#searchInput').value;
+        liveInput.focus();
+      });
+      liveInput.addEventListener('input', () => {
+        clearTimeout(liveTimer);
+        liveTimer = setTimeout(runLiveSearch, 220);
+      });
+      liveInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeSearchLive(); return; }
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const q = liveInput.value.trim();
+        if (q) { closeSearchLive(); state.search = q; setSection('cataleg', { keepSearch: true }); }
+      });
+      $('#searchLiveClose').addEventListener('click', closeSearchLive);
+    } else {
+      // PC: desplegable de resultats sota la barra de cerca
+      const input = $('#searchInput');
+      const wrap = input.closest('.search');
+      const drop = document.createElement('div');
+      drop.className = 'search-dropdown hidden';
+      wrap.appendChild(drop);
+
+      let pcTimer, pcSeq = 0;
+      const runPcSearch = async () => {
+        const q = input.value.trim();
+        const seq = ++pcSeq;
+        if (!q) { drop.classList.add('hidden'); drop.innerHTML = ''; return; }
+        try {
+          const d = await api(`${searchQueryUrl(q)}&limit=8`);
+          if (seq !== pcSeq) return;
+          drop.innerHTML = d.data.length
+            ? d.data.map(searchItemHtml).join('')
+            : `<div class="search-live-empty">Cap resultat per «${escapeHtml(q)}»</div>`;
+          drop.classList.remove('hidden');
+          bindSearchItems(drop, () => drop.classList.add('hidden'));
+        } catch { /* xarxa: res */ }
+      };
+
+      input.addEventListener('input', () => {
+        clearTimeout(pcTimer);
+        pcTimer = setTimeout(runPcSearch, 220);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { drop.classList.add('hidden'); return; }
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const q = input.value.trim();
+        if (q) { drop.classList.add('hidden'); state.search = q; setSection('cataleg', { keepSearch: true }); }
+      });
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) drop.classList.add('hidden');
+      });
+    }
   }
 
   $('#revealBtn')?.addEventListener('click', (e) => {
@@ -547,28 +595,6 @@ function renderWelcome() {
     setSection('cataleg');
   });
 
-  const search = $('#searchInput');
-  if (search) {
-    const submit = () => {
-      const q = search.value.trim();
-      if (q) { state.search = q; setSection('cataleg', { keepSearch: true }); }
-    };
-    if (isMobile()) {
-      // Mòbil: la cerca només s'envia quan l'usuari la confirma (Enter)
-      search.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); submit(); }
-      });
-    } else {
-      let t;
-      search.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          const q = search.value.trim();
-          if (q) { state.search = q; setSection('cataleg', { keepSearch: true }); }
-        }, 350);
-      });
-    }
-  }
 }
 
 /** Render de la pàgina d'Inici: continuar veient + hero destacat + fileres de contingut. */
