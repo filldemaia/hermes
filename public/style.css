@@ -1,7 +1,6 @@
 /* ── Tipografia: Playfair Display auto-allotjada (sense dependre de Google) ── */
 
-/* ── Logo: Roman SD (estil columna Trajana, 100% free) ──
-   Amb una cara extra per a la lletra E (U+0045): la versió grega de Diogenes. */
+/* ── Logo: Roman SD (estil columna Trajana, 100% free) ── */
 @font-face {
   font-family: 'Roman SD';
   src: url('/fonts/roman-sd.woff2') format('woff2');
@@ -9,13 +8,21 @@
   font-style: normal;
   font-display: swap;
 }
+
+/* ── Títols secundaris: Timeless (100% free) ── */
 @font-face {
-  font-family: 'Roman SD';
-  src: url('/fonts/diogenes.woff2') format('woff2');
+  font-family: 'Timeless';
+  src: url('/fonts/timeless.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0045;
+}
+@font-face {
+  font-family: 'Timeless';
+  src: url('/fonts/timeless-bold.woff2') format('woff2');
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'Playfair Display';
@@ -95,6 +102,7 @@
 
   --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --logo-font: 'Roman SD', 'Playfair Display', Georgia, serif;
+  --title-font: 'Timeless', 'Playfair Display', Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --radius: 12px;
@@ -365,7 +373,7 @@ body.on-home { overflow: hidden; }
 }
 .search-live-item .sl-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .search-live-item .sl-title {
-  font-weight: 600; font-size: 0.92rem;
+  font-family: var(--title-font); font-weight: 600; font-size: 0.92rem;
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
 .search-live-item .sl-meta { color: var(--muted); font-size: 0.74rem; }
@@ -619,15 +627,15 @@ body.on-home { overflow: hidden; }
   animation: spin 0.9s linear infinite;
 }
 
-/* Indicador de càrrega: el caduceu fa la passa negre → platejat (<1 s per sentit) */
-.loader-wrap { display: flex; align-items: center; justify-content: center; padding: 4rem 0; }
-.loader-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 1.1rem; }
-.loader-cell { display: flex; align-items: center; justify-content: center; padding: 2.4rem 0; }
+/* Indicador de càrrega: un caduceu gran al mig que fa la passa negre → platejat (<1 s per sentit) */
+.loader-wrap {
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem 0; min-height: 40vh;
+}
 .caduceus-loader {
-  width: 46px; height: auto;
+  width: 72px; height: auto;
   animation: caduceus-load 1.4s ease-in-out infinite;
 }
-.loader-cell .caduceus-loader { width: 40px; }
 @keyframes caduceus-load {
   0%   { filter: brightness(0); }
   50%  { filter: brightness(1); }
@@ -700,7 +708,7 @@ body.on-home { overflow: hidden; }
 
 .row { margin-bottom: 2.4rem; }
 .row-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.9rem; }
-.row-title { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
+.row-title { font-family: var(--title-font); font-size: 1.35rem; font-weight: 600; }
 .row-side { display: inline-flex; align-items: center; gap: 0.7rem; }
 .row-arrows { display: inline-flex; gap: 0.3rem; }
 .row-arrow {
@@ -793,7 +801,7 @@ body.on-home { overflow: hidden; }
   filter: grayscale(0.4) opacity(0.8);
 }
 .card-body { padding: 0.7rem 0.65rem 0.8rem; }
-.card-title { font-weight: 600; font-size: 0.9rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.card-title { font-family: var(--title-font); font-weight: 600; font-size: 0.9rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .card-title:hover { color: var(--amber-bright); }
 .card-meta { color: var(--muted); font-size: 0.76rem; margin-top: 0.25rem; }
 

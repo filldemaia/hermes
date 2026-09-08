@@ -3,16 +3,17 @@
  * i assets; la cache només serveix d'auxiliar (offline/velocitat), mai provoca
  * que els usuaris vegin versions antigues.
  */
-const VERSION = 'hermes-v48';
+const VERSION = 'hermes-v49';
 const CORE = [
   '/',
-  '/style.css?v=56',
-  '/app.js?v=48',
+  '/style.css?v=57',
+  '/app.js?v=49',
   '/manifest.webmanifest',
   '/fonts/playfair-nuFiD-vYSZviVYUb_rj3ij__anPXDTLYgFE_.woff2',
   '/fonts/playfair-nuFiD-vYSZviVYUb_rj3ij__anPXDTzYgA.woff2',
   '/fonts/roman-sd.woff2',
-  '/fonts/diogenes.woff2',
+  '/fonts/timeless.woff2',
+  '/fonts/timeless-bold.woff2',
   '/assets/caduceus.svg?v=30',
   '/icon-192.png?v=27',
   '/icon-512.png?v=27',

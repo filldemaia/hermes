@@ -126,11 +126,9 @@ function skeletonDetail() {
   return caduceusLoader();
 }
 
-/** Indicador de càrrega: el caduceu passa de negre a platejat (<1 s per sentit). */
-function caduceusLoader(count = 1) {
-  const img = `<img class="caduceus-loader" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true">`;
-  if (count <= 1) return `<div class="loader-wrap">${img}</div>`;
-  return `<div class="loader-grid">${Array.from({ length: count }, () => `<div class="loader-cell">${img}</div>`).join('')}</div>`;
+/** Indicador de càrrega: un caduceu gran al mig que passa de negre a platejat (<1 s per sentit). */
+function caduceusLoader() {
+  return `<div class="loader-wrap"><img class="caduceus-loader" src="/assets/caduceus.svg?v=30" alt="" aria-hidden="true"></div>`;
 }
 
 /** Targeta de "Continuar veient": porta als episodis en progrés. */
