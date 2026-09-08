@@ -325,7 +325,7 @@ async function renderLibrary() {
 /** Pàgina de secció (Pel·lícules / Sèries) amb fileres per categoria. */
 async function renderCategoryPage(type, title) {
   const content = $('#content');
-  content.innerHTML = `<h1 class="page-title">${title}</h1><div id="catRows"><div class="loading">Carregant categories…</div></div>`;
+  content.innerHTML = `<h1 class="page-title">${title}</h1><div id="catRows">${caduceusLoader()}</div>`;
   const container = $('#catRows');
   const tType = type === 'movie' ? 'movie' : 'series';
   const animeQ = showAnimeEnabled() ? '' : '&anime=0';

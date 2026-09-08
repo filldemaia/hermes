@@ -3,11 +3,11 @@
  * i assets; la cache només serveix d'auxiliar (offline/velocitat), mai provoca
  * que els usuaris vegin versions antigues.
  */
-const VERSION = 'hermes-v50';
+const VERSION = 'hermes-v51';
 const CORE = [
   '/',
   '/style.css?v=58',
-  '/app.js?v=50',
+  '/app.js?v=51',
   '/manifest.webmanifest',
   '/fonts/playfair-nuFiD-vYSZviVYUb_rj3ij__anPXDTLYgFE_.woff2',
   '/fonts/playfair-nuFiD-vYSZviVYUb_rj3ij__anPXDTzYgA.woff2',
