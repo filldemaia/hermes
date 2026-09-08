@@ -557,9 +557,12 @@ body.on-home { overflow: hidden; }
 .avatar {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border-radius: 50%;
+  overflow: hidden; flex: none;
   background: linear-gradient(135deg, var(--amber-bright), var(--amber));
   color: #0b0b0f; font-weight: 700; font-size: 0.85rem;
 }
+.avatar.has-photo { background: var(--surface-3); }
+.avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avatar-name { color: var(--text-soft); font-size: 0.82rem; max-width: 12ch; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
 /* ─────────────── Botons genèrics ─────────────── */

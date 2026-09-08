@@ -707,12 +707,12 @@ async function renderHome(titles) {
   `).join('');
 
   content.innerHTML = `
-    ${watchRow}
     ${hero}
     <div class="hero-rows">
       ${hero ? '' : '<h1 class="page-title">Catàleg</h1>'}
       ${rows || '<div class="empty">No hi ha títols encara.</div>'}
     </div>
+    ${watchRow}
     ${newRows}
     ${contRow}
   `;
