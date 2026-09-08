@@ -128,6 +128,10 @@ CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
   if (!cols.includes('photo')) {
     db.exec('ALTER TABLE users ADD COLUMN photo TEXT');
   }
+  const tcol = (db.prepare('PRAGMA table_info(titles)').all() as { name: string }[]).map((c) => c.name);
+  if (tcol.includes('tmdb_id') && !tcol.includes('runtime')) {
+    db.exec('ALTER TABLE titles ADD COLUMN runtime INTEGER');
+  }
 
   migrateGenresToCa(db);
 }
@@ -217,14 +221,15 @@ export interface CatalogUpsert {
   isAnime: number;
   providerData: string | null;
   detailsSynced: number;
+  runtime?: number | null;
 }
 
 export function upsertCatalogTitle(db: Database.Database, t: CatalogUpsert): void {
   db.prepare(
     `INSERT INTO titles (id, tmdb_id, type, original_title, catalan_title, year, synopsis_ca, poster_url, backdrop_url,
                          genres, original_language, popularity, vote_average, is_anime, has_ca, is_free, file_path,
-                         provider_data, details_synced, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?, datetime('now'), datetime('now'))
+                         provider_data, runtime, details_synced, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?, ?, datetime('now'), datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        original_title = excluded.original_title,
        catalan_title = COALESCE(excluded.catalan_title, titles.catalan_title),
@@ -239,6 +244,7 @@ export function upsertCatalogTitle(db: Database.Database, t: CatalogUpsert): voi
        is_anime = MAX(titles.is_anime, excluded.is_anime),
        has_ca = MAX(titles.has_ca, excluded.has_ca),
        provider_data = COALESCE(excluded.provider_data, titles.provider_data),
+       runtime = COALESCE(excluded.runtime, titles.runtime),
        details_synced = MAX(titles.details_synced, excluded.details_synced),
        updated_at = datetime('now')`
   ).run(
@@ -258,6 +264,7 @@ export function upsertCatalogTitle(db: Database.Database, t: CatalogUpsert): voi
     t.isAnime,
     t.hasCa,
     t.providerData,
+    t.runtime ?? null,
     t.detailsSynced
   );
 }
@@ -301,7 +308,9 @@ const SORTS: Record<string, string> = {
 };
 
 export function listTitles(db: Database.Database, f: TitleFilters): { data: Record<string, unknown>[]; total: number; page: number; totalPages: number } {
-  const where: string[] = ['1=1'];
+  // Només títols complets: sense portada no es mostren (TMDb no en té per
+  // a algunes obres molt obscures; l'usuari prefereix no veure-les).
+  const where: string[] = ['t.poster_url IS NOT NULL'];
   const params: unknown[] = [];
   if (f.type === 'movie' || f.type === 'series') {
     where.push('t.type = ?');

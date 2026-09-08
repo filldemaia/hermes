@@ -54,7 +54,8 @@ function makeFixture(): void {
   };
   initSchema(db as never);
 
-  const base = { detailsSynced: 1, providerData: null, synopsisCa: 'Sinopsi de prova', backdropUrl: null };
+  const POSTER = 'https://image.tmdb.org/t/p/w500/test.jpg';
+  const base = { detailsSynced: 1, providerData: null, synopsisCa: 'Sinopsi de prova', backdropUrl: null, posterUrl: POSTER, runtime: 95 };
   // Original en català (pel·lícula)
   upsertCatalogTitle(db, {
     ...base,
@@ -63,7 +64,7 @@ function makeFixture(): void {
     originalTitle: 'Film català',
     catalanTitle: 'Film català',
     year: 2020,
-    posterUrl: null,
+    posterUrl: POSTER,
     genres: ['Drama'],
     originalLanguage: 'ca',
     popularity: 10,
@@ -79,7 +80,7 @@ function makeFixture(): void {
     originalTitle: 'Inception de prova',
     catalanTitle: 'Origen de prova',
     year: 2010,
-    posterUrl: null,
+    posterUrl: POSTER,
     genres: ['Acció', 'Ciència ficció'],
     originalLanguage: 'en',
     popularity: 90,
@@ -100,7 +101,7 @@ function makeFixture(): void {
     originalTitle: 'Anime de prova',
     catalanTitle: 'Anime doblat',
     year: 2015,
-    posterUrl: null,
+    posterUrl: POSTER,
     genres: ['Animació'],
     originalLanguage: 'ja',
     popularity: 50,
@@ -116,7 +117,7 @@ function makeFixture(): void {
     originalTitle: 'Sèrie estrangera',
     catalanTitle: null,
     year: 2022,
-    posterUrl: null,
+    posterUrl: POSTER,
     genres: ['Documental'],
     originalLanguage: 'de',
     popularity: 5,
@@ -132,7 +133,7 @@ function makeFixture(): void {
     originalTitle: 'Clàssic de domini públic',
     catalanTitle: 'Clàssic lliure',
     year: 1925,
-    posterUrl: null,
+    posterUrl: POSTER,
     genres: ['Comèdia'],
     originalLanguage: 'en',
     popularity: 3,

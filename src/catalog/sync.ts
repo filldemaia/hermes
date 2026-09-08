@@ -64,6 +64,8 @@ interface DetailsResult extends DiscoverResult {
   genres?: { id: number; name: string }[];
   origin_country?: string[];
   original_language?: string;
+  runtime?: number | null;
+  episode_run_time?: number[];
   production_countries?: { iso_3166_1: string }[];
   translations?: { translations: { iso_639_1: string; data?: Record<string, string | undefined> }[] };
   'watch/providers'?: { results: Record<string, unknown> };
@@ -179,6 +181,9 @@ async function syncDetails(db: Database.Database): Promise<void> {
         const caTitle = caTr?.data?.title || caTr?.data?.name || null;
         const caOverview = caTr?.data?.overview || null;
         const esProviders = (d['watch/providers']?.results || {}).ES;
+        const runtime = kind === 'movie'
+          ? (d.runtime ?? null)
+          : ((d.episode_run_time || []).length ? Math.max(...(d.episode_run_time || [])) : null);
         dbq.upsertCatalogTitle(db, {
           tmdbId: row.tmdb_id,
           type: kind === 'movie' ? 'movie' : 'series',
@@ -195,6 +200,7 @@ async function syncDetails(db: Database.Database): Promise<void> {
           hasCa: caTr ? 1 : 0,
           isAnime,
           providerData: esProviders ? JSON.stringify(esProviders) : null,
+          runtime,
           detailsSynced: 1,
         });
       } catch {

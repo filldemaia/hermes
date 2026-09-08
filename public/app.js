@@ -1107,6 +1107,7 @@ async function renderDetail(id, opts) {
             <span class="meta-pill">${escapeHtml(typeLabel)}</span>
             ${title.is_anime ? '<span class="meta-pill pill-anime">Anime</span>' : ''}
             ${title.year ? `<span class="meta-pill">${escapeHtml(title.year)}</span>` : ''}
+            ${title.runtime ? `<span class="meta-pill">${title.runtime} min</span>` : ''}
             ${ratingHtml}
             ${title.original_title !== (title.catalan_title || title.original_title) ? `<span>${escapeHtml(title.original_title)}</span>` : ''}
           </div>
